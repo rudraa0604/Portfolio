@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+git--g<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio Admin Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+
+    <!-- Login Screen -->
+    <div id="login-screen">
+        <div class="login-card">
+            <h2>Admin Login</h2>
+            <form id="login-form">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="username" class="form-control" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="password" class="form-control" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn">Login</button>
+            </form>
+            <p style="margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-secondary); text-align: center;">
+                Please secure your credentials.
+            </p>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Admin Panel</h2>
+            </div>
+            <ul class="nav-links">
+                <li class="nav-item active" data-target="profile-section">👤 Profile & General</li>
+                <li class="nav-item" data-target="services-section">🛠️ Services</li>
+                <li class="nav-item" data-target="projects-section">📁 Portfolio Projects</li>
+                <li class="nav-item" data-target="education-section">🎓 Education</li>
+                <li class="nav-item" data-target="quote-section">💬 Quote Box</li>
+                <li class="nav-item" data-target="footer-box-section">📝 Footer Box</li>
+                <li class="nav-item" data-target="achievements-section">🏆 Certifications & Awards</li>
+                <li class="nav-item" data-target="custom-content-section">✍️ Custom Content</li>
+                <li class="nav-item" data-target="theme-section">🎨 Theme Switcher</li>
+            </ul>
+            <button id="logout-btn" class="btn logout-btn">Logout</button>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            
+            <!-- Profile Section -->
+            <section id="profile-section" class="section active">
+                <div class="section-header">
+                    <h1>Profile & General Information</h1>
+                    <button class="btn" form="profile-form" style="width: auto;">Save Profile</button>
+                </div>
+                
+                <form id="profile-form">
+                    <div class="card">
+                        <h3>Personal Info</h3>
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <input type="text" id="prof-name" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Title (Use '&' for line break in subtitle)</label>
+                            <input type="text" id="prof-title" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea id="prof-desc" class="form-control"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Profile Photo</label>
+                            <div class="custom-file-upload">
+                                <input type="file" id="prof-photo-upload" accept="image/*">
+                                <div class="file-upload-btn" id="prof-photo-label">Choose a photo or drop it here...</div>
+                            </div>
+                            <input type="hidden" id="prof-photo-url">
+                            <img id="prof-photo-preview" class="image-preview" style="display: none;">
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>Contact & Social Links</h3>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="prof-email" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>WhatsApp / Phone</label>
+                            <input type="text" id="prof-phone" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Location</label>
+                            <input type="text" id="prof-location" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Website URL</label>
+                            <input type="text" id="prof-website" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>LinkedIn URL</label>
+                            <input type="text" id="prof-linkedin" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>Availability</h3>
+                        <div class="form-group">
+                            <label>Availability Status (e.g. AVAILABLE FOR INTERNSHIP)</label>
+                            <input type="text" id="prof-availability" class="form-control" placeholder="AVAILABLE FOR INTERNSHIP">
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3>Resume Document</h3>
+                        <p style="color: var(--text-secondary); margin-bottom: 1rem; font-size: 0.9rem;">
+                            Upload your resume (PDF / DOCX). When visitors click "Resume" in the hero section, this file will be downloaded.
+                        </p>
+                        <div class="form-group">
+                            <label>Upload Resume File</label>
+                            <div class="custom-file-upload">
+                                <input type="file" id="prof-resume-upload" accept=".pdf,.doc,.docx,application/pdf">
+                                <div class="file-upload-btn" id="prof-resume-label">Choose a resume file (.pdf, .docx)...</div>
+                            </div>
+                            <input type="hidden" id="prof-resume-url">
+                            <div id="prof-resume-preview" style="margin-top: 1rem; display: none; padding: 0.75rem 1rem; background: var(--sidebar-bg); border-radius: 8px; border: 1px solid var(--border); align-items: center; justify-content: space-between;">
+                                <div style="display: flex; align-items: center; gap: 0.6rem;">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--accent);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                                    <span id="prof-resume-name" style="font-size: 0.9rem; color: var(--text-primary); word-break: break-all;">No resume uploaded</span>
+                                </div>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <a id="prof-resume-link" href="#" target="_blank" class="btn" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; text-decoration: none; width: auto;">View / Test</a>
+                                    <button type="button" id="prof-resume-remove" class="btn danger" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; width: auto;">Remove</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Services Section -->
+            <section id="services-section" class="section">
+                <div class="section-header">
+                    <h1>Services</h1>
+                    <button class="btn" id="add-service-btn" style="width: auto;">+ Add Service</button>
+                </div>
+                
+                <div class="card" id="service-form-card" style="display: none;">
+                    <h3 id="service-form-title">Add Service</h3>
+                    <form id="service-form">
+                        <input type="hidden" id="service-id">
+                        <div class="form-group">
+                            <label>Service Name</label>
+                            <input type="text" id="service-name" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Price / Rate</label>
+                            <input type="text" id="service-price" class="form-control">
+                        </div>
+                        <button type="submit" class="btn">Save Service</button>
+                        <button type="button" class="btn danger" id="cancel-service-btn" style="margin-top: 1rem;">Cancel</button>
+                    </form>
+                </div>
+
+                <div class="item-list" id="services-list">
+                    <!-- Loaded dynamically -->
+                </div>
+            </section>
+
+            <!-- Projects Section -->
+            <section id="projects-section" class="section">
+                <div class="section-header">
+                    <h1>Portfolio Projects</h1>
+                    <button class="btn" id="add-project-btn" style="width: auto;">+ Add Project</button>
+                </div>
+
+                <div class="card" id="project-form-card" style="display: none;">
+                    <h3 id="project-form-title">Add Project</h3>
+                    <form id="project-form">
+                        <input type="hidden" id="project-id">
+                        <div class="form-group">
+                            <label>Project Title</label>
+                            <input type="text" id="project-title" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Category</label>
+                            <input type="text" id="project-category" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Project Image/Thumbnail</label>
+                            <div class="custom-file-upload">
+                                <input type="file" id="project-image-upload" accept="image/*,video/*">
+                                <div class="file-upload-btn" id="project-image-label">Choose project thumbnail...</div>
+                            </div>
+                            <input type="hidden" id="project-image-url">
+                            <img id="project-image-preview" class="image-preview" style="display: none;">
+                        </div>
+                        <button type="submit" class="btn">Save Project</button>
+                        <button type="button" class="btn danger" id="cancel-project-btn" style="margin-top: 1rem;">Cancel</button>
+                    </form>
+                </div>
+
+                <div class="item-list" id="projects-list">
+                    <!-- Loaded dynamically -->
+                </div>
+            </section>
+
+            <!-- Quote Box Section -->
+            <section id="quote-section" class="section">
+                <div class="section-header">
+                    <h1>Quote Box</h1>
+                    <button class="btn" form="quote-form" style="width: auto;">Save Quote</button>
+                </div>
+                <form id="quote-form">
+                    <div class="card">
+                        <div class="form-group">
+                            <label>Quote Text</label>
+                            <textarea id="prof-quote-text" class="form-control" placeholder="Write a meaningful quote..." rows="4"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Quote Footer / Author Signature</label>
+                            <input type="text" id="prof-quote-footer" class="form-control" placeholder="e.g. - Rudra Pratap">
+                        </div>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Footer Box Section -->
+            <section id="footer-box-section" class="section">
+                <div class="section-header">
+                    <h1>Footer Box</h1>
+                    <button class="btn" form="footer-box-form" style="width: auto;">Save Footer Box</button>
+                </div>
+                <form id="footer-box-form">
+                    <div class="card">
+                        <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.9rem;">
+                            This box will appear on the right side of your footer. You can type text, or upload an image which will automatically insert into the description box! (HTML supported).
+                        </p>
+                        <div class="form-group">
+                            <label>Topic / Title</label>
+                            <input type="text" id="prof-footer-topic" class="form-control" placeholder="e.g. My Latest Work">
+                        </div>
+                        <div class="form-group">
+                            <label>Description / Media (HTML supported)</label>
+                            <textarea id="prof-footer-desc" class="form-control" placeholder="Write something or insert an image..." rows="6"></textarea>
+                        </div>
+                        <div class="form-group" style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                            <label>Upload Media (Inserts an image tag into the description above)</label>
+                            <input type="file" id="prof-footer-media" class="form-control" accept="image/*">
+                        </div>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Education Section -->
+            <section id="education-section" class="section">
+                <div class="section-header">
+                    <h1>Education</h1>
+                    <button class="btn" id="add-education-btn" style="width: auto;">+ Add Education</button>
+                </div>
+
+                <div class="card" id="education-form-card" style="display: none;">
+                    <h3 id="education-form-title">Add Education</h3>
+                    <form id="education-form">
+                        <input type="hidden" id="education-id">
+                        <div class="form-group">
+                            <label>Degree / Course Name</label>
+                            <input type="text" id="education-degree" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Institution Name</label>
+                            <input type="text" id="education-institution" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Year (e.g., 2024 Ongoing)</label>
+                            <input type="text" id="education-year" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn">Save Education</button>
+                        <button type="button" class="btn danger" id="cancel-education-btn" style="margin-top: 1rem;">Cancel</button>
+                    </form>
+                </div>
+
+                <div class="item-list" id="education-list">
+                    <!-- Loaded dynamically -->
+                </div>
+            </section>
+
+            <!-- Achievements Section -->
+            <section id="achievements-section" class="section">
+                <div class="section-header">
+                    <h1>Certifications & Awards</h1>
+                    <button class="btn" id="add-achievement-btn" style="width: auto;">+ Add Certification</button>
+                </div>
+
+                <div class="card" id="achievement-form-card" style="display: none;">
+                    <h3 id="achievement-form-title">Add Achievement</h3>
+                    <form id="achievement-form">
+                        <input type="hidden" id="achievement-id">
+                        <div class="form-group">
+                            <label>Title</label>
+                            <input type="text" id="achievement-title" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Issuer / Organization</label>
+                            <input type="text" id="achievement-issuer" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn">Save Achievement</button>
+                        <button type="button" class="btn danger" id="cancel-achievement-btn" style="margin-top: 1rem;">Cancel</button>
+                    </form>
+                </div>
+
+                <div class="item-list" id="achievements-list">
+                    <!-- Loaded dynamically -->
+                </div>
+            </section>
+
+            <!-- Custom Content Section -->
+            <section id="custom-content-section" class="section">
+                <div class="section-header">
+                    <h1>Custom Content</h1>
+                    <button class="btn" id="add-content-btn" style="width: auto;">+ Add Content Block</button>
+                </div>
+
+                <div class="card" id="content-form-card" style="display: none;">
+                    <h3 id="content-form-title">Add Custom Content</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.9rem;">
+                        You can use basic HTML tags like &lt;b&gt;bold&lt;/b&gt;, &lt;h2&gt;Heading&lt;/h2&gt;, or &lt;br&gt; for line breaks.
+                    </p>
+                    <form id="content-form">
+                        <input type="hidden" id="content-id">
+                        <div class="form-group">
+                            <label>Block Title (Internal reference)</label>
+                            <input type="text" id="content-title" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Content (HTML supported)</label>
+                            <textarea id="content-text" class="form-control" required placeholder="<h1>My New Section</h1><br><p>Write something cool here.</p>"></textarea>
+                        </div>
+                        <input type="hidden" id="content-placement" value="footer-top">
+                        <button type="submit" class="btn">Save Content Block</button>
+                        <button type="button" class="btn danger" id="cancel-content-btn" style="margin-top: 1rem;">Cancel</button>
+                    </form>
+                </div>
+
+                <div class="item-list" id="content-list">
+                    <!-- Loaded dynamically -->
+                </div>
+            </section>
+
+            <!-- Theme Switcher Section -->
+            <section id="theme-section" class="section">
+                <div class="section-header">
+                    <h1>Theme Switcher</h1>
+                </div>
+                <div class="card">
+                    <p style="margin-bottom: 2rem; color: var(--text-secondary); font-size: 1.05rem;">
+                        Select a gradient theme. This will instantly apply to the live website and save for all visitors.
+                    </p>
+                    <div class="theme-grid">
+                        <div class="theme-card" data-theme="Midnight Blue">
+                            <div class="theme-preview theme-midnight"></div>
+                            <h4>Midnight Blue</h4>
+                        </div>
+                        <div class="theme-card" data-theme="Crimson Rudra">
+                            <div class="theme-preview theme-crimson"></div>
+                            <h4>Crimson Rudra</h4>
+                        </div>
+                        <div class="theme-card" data-theme="Emerald Dark">
+                            <div class="theme-preview theme-emerald"></div>
+                            <h4>Emerald Dark</h4>
+                        </div>
+                        <div class="theme-card" data-theme="Sunset Pink">
+                            <div class="theme-preview theme-sunset"></div>
+                            <h4>Sunset Pink</h4>
+                        </div>
+                        <div class="theme-card" data-theme="Cyberpunk">
+                            <div class="theme-preview theme-cyberpunk"></div>
+                            <h4>Cyberpunk</h4>
+                        </div>
+                        <div class="theme-card" data-theme="Royal Purple">
+                            <div class="theme-preview theme-royal"></div>
+                            <h4>Royal Purple</h4>
+                        </div>
+                        <div class="theme-card" data-theme="Golden Amber">
+                            <div class="theme-preview theme-amber"></div>
+                            <h4>Golden Amber</h4>
+                        </div>
+                        <div class="theme-card" data-theme="Slate Steel">
+                            <div class="theme-preview theme-slate"></div>
+                            <h4>Slate Steel</h4>
+                        </div>
+                        <div class="theme-card" data-theme="Rose Gold">
+                            <div class="theme-preview theme-rose"></div>
+                            <h4>Rose Gold</h4>
+                        </div>
+                        <div class="theme-card" data-theme="Ocean Teal">
+                            <div class="theme-preview theme-ocean"></div>
+                            <h4>Ocean Teal</h4>
+                        </div>
+                        <div class="theme-card" data-theme="Forest Lime">
+                            <div class="theme-preview theme-forest"></div>
+                            <h4>Forest Lime</h4>
+                        </div>
+                        <div class="theme-card" data-theme="Deep Space">
+                            <div class="theme-preview theme-space"></div>
+                            <h4>Deep Space</h4>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">Saved Successfully!</div>
+
+    <script src="admin.js"></script>
+</body>
+</html>

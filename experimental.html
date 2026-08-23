@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio - Experimental Version</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600&family=Oswald:wght@400;500;700&family=Caveat&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="animations/effects.css">
+</head>
+<body>
+    <!-- Preloader -->
+    <div class="preloader">
+        <div class="preloader-panel panel-left"></div>
+        <div class="preloader-panel panel-right"></div>
+        <div class="preloader-counter">0%</div>
+    </div>
+
+    <!-- Custom Cursor -->
+    <div class="custom-cursor"></div>
+
+    <div class="overlay"></div>
+    
+    <div class="container">
+        <header>
+            <div class="logo-text" id="header-title">CYBERSECURITY<br>GRAPHIC DESIGNER</div>
+            <div class="status">AVAILABLE FOR INTERNSHIP <span>✦</span></div>
+        </header>
+
+        <section class="hero">
+            <!-- Three.js Background -->
+            <div id="three-canvas-container"></div>
+            
+            <div class="hero-content">
+                <div class="intro">
+                    <span class="handwriting">Hello, I'm</span>
+                    <h1 class="main-title" id="main-name" style="font-size: 7.5rem;">RUDRA PRATAP<br>CHAURASIYA</h1>
+                    <h2 class="subtitle" id="main-title-sub">CYBERSECURITY &<br>GRAPHIC DESIGNER</h2>
+                    <p class="description" id="main-desc"></p>
+                    <div class="worldwide">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                        <span id="main-availability"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="hero-stats">
+                <div class="badge">
+                    <span class="star">✦</span>
+                    <p>Turning ideas<br>into powerful<br>digital experiences.</p>
+                </div>
+                <div class="stat-list" id="hero-stats"></div>
+            </div>
+        </section>
+
+        <section class="projects">
+            <div class="section-header">
+                <h2>SELECTED PROJECTS</h2>
+                <a href="#" class="view-all">VIEW ALL PROJECTS →</a>
+            </div>
+            <!-- Changed to project-wrapper for horizontal scroll -->
+            <div class="project-wrapper" id="project-grid"></div>
+        </section>
+
+        <!-- Marquee Skills -->
+        <div class="marquee-container" id="marquee-skills">
+            <div class="marquee-content" id="marquee-content">
+                <!-- Skills injected here -->
+            </div>
+        </div>
+
+        <section class="middle-section">
+            <div class="education-skills">
+                <h2>EDUCATION & SKILLS</h2>
+                
+                <h3 class="sub-heading">EDUCATION</h3>
+                <div id="edu-container"></div>
+
+                <h3 class="sub-heading mt-4" style="margin-top: 2rem;">CERTIFICATIONS</h3>
+                <div id="cert-container"></div>
+            </div>
+
+            <div class="work-process">
+                <h2>WORK PROCESS</h2>
+                <div class="process-timeline">
+                    <!-- Kept static for simplicity, animatable via GSAP -->
+                    <div class="process-step">
+                        <div class="step-num">01</div>
+                        <div class="step-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        </div>
+                        <div class="step-content">
+                            <h4>DISCOVER</h4>
+                            <p>Understanding goals, audience, and project requirements.</p>
+                        </div>
+                    </div>
+                    <div class="process-step">
+                        <div class="step-num">02</div>
+                        <div class="step-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2v1"/><path d="M12 7v1"/><path d="M12 12v1"/><path d="M19 12h1"/><path d="M4 12H3"/><path d="M17 17l.7.7"/><path d="M7 7L6.3 6.3"/><path d="M17 7l.7-.7"/><path d="M7 17l-.7.7"/><circle cx="12" cy="12" r="5"/></svg>
+                        </div>
+                        <div class="step-content">
+                            <h4>IDEATE</h4>
+                            <p>Planning, wireframing, and creating the right concept.</p>
+                        </div>
+                    </div>
+                    <div class="process-step">
+                        <div class="step-num">03</div>
+                        <div class="step-icon">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
+                        </div>
+                        <div class="step-content">
+                            <h4>DESIGN</h4>
+                            <p>Crafting visual design with a focus on visual hierarchy and spacing.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="quote-box">
+                <div class="quote-mark">“</div>
+                <p id="quote-text"></p>
+                <div class="signature" id="signature-name"></div>
+                <div class="quote-footer" id="quote-footer"></div>
+            </div>
+        </section>
+
+        <!-- TESTIMONIALS SECTION -->
+        <section class="testimonials">
+            <div class="section-header">
+                <h2>CLIENT TESTIMONIALS</h2>
+            </div>
+            <div class="testimonial-grid" id="test-container"></div>
+        </section>
+
+        <footer>
+            <div class="footer-left">
+                <h2>LET'S WORK<br>TOGETHER <span style="color:var(--red-accent)">✦</span></h2>
+                <p>I'm currently open for new work-from-home internships and collaborations. Let's create something amazing.</p>
+                <a href="#" class="btn" id="footer-availability">→ AVAILABLE FOR INTERNSHIP</a>
+            </div>
+            <div class="footer-middle">
+                <div class="contact-item">
+                    <span class="icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                    </span>
+                    <span id="footer-email"></span>
+                </div>
+                <div class="contact-item">
+                    <span class="icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                    </span>
+                    <span id="footer-website"></span>
+                </div>
+                <div class="contact-item">
+                    <span class="icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                    </span>
+                    <span id="footer-phone"></span>
+                </div>
+                <div class="contact-item">
+                    <span class="icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                    </span>
+                    <span id="footer-location"></span>
+                </div>
+            </div>
+            <div class="footer-right">
+                <div class="mockup-placeholder"></div>
+            </div>
+        </footer>
+    </div>
+    
+    <!-- CDNs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.19/bundled/lenis.min.js"></script>
+
+    <!-- Custom Animation Scripts -->
+    <script src="animations/lenis-setup.js"></script>
+    <script src="animations/cursor.js"></script>
+    <script src="animations/magnetic.js"></script>
+    <script src="animations/three-scene.js"></script>
+    
+    <!-- App Logic (modified to init animations) -->
+    <script src="animations/app.js"></script>
+</body>
+</html>
