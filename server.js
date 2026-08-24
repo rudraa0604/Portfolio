@@ -135,15 +135,68 @@ app.get('/api/profile', (req, res) => {
     });
 });
 app.post('/api/profile', authenticateToken, (req, res) => {
-    const { name, title, description, email, phone, website, location, availability, account_id, quote_text, quote_footer, background_url, whatsapp, linkedin, instagram, github, profile_photo, footer_topic, footer_desc, resume_url } = req.body;
-    db.run(
-        `UPDATE profile SET name = ?, title = ?, description = ?, email = ?, phone = ?, website = ?, location = ?, availability = ?, account_id = ?, quote_text = ?, quote_footer = ?, background_url = ?, whatsapp = ?, linkedin = ?, instagram = ?, github = ?, profile_photo = ?, footer_topic = ?, footer_desc = ?, resume_url = ? WHERE id = (SELECT id FROM profile ORDER BY id DESC LIMIT 1)`,
-        [name, title, description, email, phone, website, location, availability, account_id, quote_text, quote_footer, background_url, whatsapp, linkedin, instagram, github, profile_photo, footer_topic, footer_desc, resume_url],
-        function(err) {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json({ message: "Profile updated successfully" });
+    db.get("SELECT * FROM profile ORDER BY id DESC LIMIT 1", (err, current) => {
+        if (err) return res.status(500).json({ error: err.message });
+        
+        const c = current || {};
+        const b = req.body || {};
+
+        const updated = {
+            name: b.name !== undefined ? b.name : (c.name || ''),
+            title: b.title !== undefined ? b.title : (c.title || ''),
+            description: b.description !== undefined ? b.description : (c.description || ''),
+            email: b.email !== undefined ? b.email : (c.email || ''),
+            phone: b.phone !== undefined ? b.phone : (c.phone || ''),
+            website: b.website !== undefined ? b.website : (c.website || ''),
+            location: b.location !== undefined ? b.location : (c.location || ''),
+            availability: b.availability !== undefined ? b.availability : (c.availability || ''),
+            account_id: b.account_id !== undefined ? b.account_id : (c.account_id || ''),
+            quote_text: b.quote_text !== undefined ? b.quote_text : (c.quote_text || ''),
+            quote_footer: b.quote_footer !== undefined ? b.quote_footer : (c.quote_footer || ''),
+            background_url: b.background_url !== undefined ? b.background_url : (c.background_url || ''),
+            whatsapp: b.whatsapp !== undefined ? b.whatsapp : (c.whatsapp || ''),
+            linkedin: b.linkedin !== undefined ? b.linkedin : (c.linkedin || ''),
+            instagram: b.instagram !== undefined ? b.instagram : (c.instagram || ''),
+            github: b.github !== undefined ? b.github : (c.github || ''),
+            profile_photo: b.profile_photo !== undefined ? b.profile_photo : (c.profile_photo || ''),
+            footer_topic: b.footer_topic !== undefined ? b.footer_topic : (c.footer_topic || ''),
+            footer_desc: b.footer_desc !== undefined ? b.footer_desc : (c.footer_desc || ''),
+            resume_url: b.resume_url !== undefined ? b.resume_url : (c.resume_url || '')
+        };
+
+        if (c.id) {
+            db.run(
+                `UPDATE profile SET name = ?, title = ?, description = ?, email = ?, phone = ?, website = ?, location = ?, availability = ?, account_id = ?, quote_text = ?, quote_footer = ?, background_url = ?, whatsapp = ?, linkedin = ?, instagram = ?, github = ?, profile_photo = ?, footer_topic = ?, footer_desc = ?, resume_url = ? WHERE id = ?`,
+                [
+                    updated.name, updated.title, updated.description, updated.email, updated.phone,
+                    updated.website, updated.location, updated.availability, updated.account_id,
+                    updated.quote_text, updated.quote_footer, updated.background_url, updated.whatsapp,
+                    updated.linkedin, updated.instagram, updated.github, updated.profile_photo,
+                    updated.footer_topic, updated.footer_desc, updated.resume_url,
+                    c.id
+                ],
+                function(updateErr) {
+                    if (updateErr) return res.status(500).json({ error: updateErr.message });
+                    res.json({ message: "Profile updated successfully", profile: updated });
+                }
+            );
+        } else {
+            db.run(
+                `INSERT INTO profile (name, title, description, email, phone, website, location, availability, account_id, quote_text, quote_footer, background_url, whatsapp, linkedin, instagram, github, profile_photo, footer_topic, footer_desc, resume_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [
+                    updated.name, updated.title, updated.description, updated.email, updated.phone,
+                    updated.website, updated.location, updated.availability, updated.account_id,
+                    updated.quote_text, updated.quote_footer, updated.background_url, updated.whatsapp,
+                    updated.linkedin, updated.instagram, updated.github, updated.profile_photo,
+                    updated.footer_topic, updated.footer_desc, updated.resume_url
+                ],
+                function(insertErr) {
+                    if (insertErr) return res.status(500).json({ error: insertErr.message });
+                    res.json({ message: "Profile created successfully", id: this.lastID, profile: updated });
+                }
+            );
         }
-    );
+    });
 });
 
 // Projects endpoints
@@ -201,15 +254,15 @@ app.put('/api/education/:id', authenticateToken, (req, res) => {
 makeGetRoute('/api/certifications', 'certifications');
 makeDeleteRoute('/api/certifications', 'certifications');
 app.post('/api/certifications', authenticateToken, (req, res) => {
-    db.run("INSERT INTO certifications (name, issuer) VALUES (?, ?)", [req.body.name, req.body.issuer], function(err) {
+    db.run("INSERT INTO certifications (name, issuer, image_url) VALUES (?, ?, ?)", [req.body.name, req.body.issuer, req.body.image_url || ''], function(err) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ id: this.lastID });
     });
 });
 app.put('/api/certifications/:id', authenticateToken, (req, res) => {
-    db.run("UPDATE certifications SET name = ?, issuer = ? WHERE id = ?", [req.body.name, req.body.issuer, req.params.id], function(err) {
+    db.run("UPDATE certifications SET name = ?, issuer = ?, image_url = ? WHERE id = ?", [req.body.name, req.body.issuer, req.body.image_url || '', req.params.id], function(err) {
         if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: "Award updated successfully" });
+        res.json({ message: "Certification updated successfully" });
     });
 });
 
@@ -223,7 +276,7 @@ app.post('/api/stats', authenticateToken, (req, res) => {
     });
 });
 
-// Testimonials endpoints
+// Testimonials endpoints (Legacy support)
 makeGetRoute('/api/testimonials', 'testimonials');
 makeDeleteRoute('/api/testimonials', 'testimonials');
 app.post('/api/testimonials', authenticateToken, (req, res) => {
@@ -236,6 +289,73 @@ app.put('/api/testimonials/:id', authenticateToken, (req, res) => {
     db.run("UPDATE testimonials SET quote = ?, client_name = ?, client_title = ? WHERE id = ?", [req.body.quote, req.body.client_name, req.body.client_title, req.params.id], function(err) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: "Testimonial updated successfully" });
+    });
+});
+
+// Reviews Endpoints (with Approval Workflow & Ratings)
+app.get('/api/reviews', (req, res) => {
+    const { status } = req.query;
+    if (status === 'approved') {
+        // Public endpoint for homepage to fetch approved reviews
+        db.all("SELECT * FROM reviews WHERE status = 'approved' ORDER BY id DESC", (err, rows) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json(rows);
+        });
+    } else {
+        // Protected admin endpoint for all/filtered reviews
+        authenticateToken(req, res, () => {
+            let query = "SELECT * FROM reviews ORDER BY CASE WHEN status = 'pending' THEN 0 ELSE 1 END, id DESC";
+            let params = [];
+            if (status) {
+                query = "SELECT * FROM reviews WHERE status = ? ORDER BY id DESC";
+                params = [status];
+            }
+            db.all(query, params, (err, rows) => {
+                if (err) return res.status(500).json({ error: err.message });
+                res.json(rows);
+            });
+        });
+    }
+});
+
+app.post('/api/reviews', (req, res) => {
+    const { name, designation, review_text, rating } = req.body;
+    if (!name || !designation || !review_text) {
+        return res.status(400).json({ error: "Name, designation, and review text are required." });
+    }
+    const cleanName = String(name).trim().slice(0, 100);
+    const cleanDesig = String(designation).trim().slice(0, 120);
+    const cleanText = String(review_text).trim().slice(0, 500);
+    const numRating = Math.max(1, Math.min(5, parseInt(rating) || 5));
+
+    db.run(
+        "INSERT INTO reviews (name, designation, review_text, rating, status) VALUES (?, ?, ?, ?, 'pending')",
+        [cleanName, cleanDesig, cleanText, numRating],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ 
+                message: "Thanks! Your review will appear after approval.", 
+                id: this.lastID 
+            });
+        }
+    );
+});
+
+app.patch('/api/reviews/:id', authenticateToken, (req, res) => {
+    const { status } = req.body;
+    if (!['pending', 'approved', 'rejected'].includes(status)) {
+        return res.status(400).json({ error: "Invalid status. Must be pending, approved, or rejected." });
+    }
+    db.run("UPDATE reviews SET status = ? WHERE id = ?", [status, req.params.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: `Review ${status} successfully` });
+    });
+});
+
+app.delete('/api/reviews/:id', authenticateToken, (req, res) => {
+    db.run("DELETE FROM reviews WHERE id = ?", [req.params.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: "Review deleted successfully" });
     });
 });
 

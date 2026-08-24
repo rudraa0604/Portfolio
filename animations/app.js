@@ -397,15 +397,216 @@ document.addEventListener('DOMContentLoaded', () => {
         edu.forEach(e => eduCont.innerHTML += `<div class="edu-item"><div><h4>${e.degree}</h4><p>${e.institution}</p></div><span class="year">${e.year}</span></div>`);
 
         const certCont = document.getElementById('cert-container');
-        certs.forEach(c => certCont.innerHTML += `<div class="edu-item" style="margin-bottom:0.8rem"><div><h4 style="font-size:0.95rem">${c.name}</h4><p style="font-size:0.8rem">${c.issuer}</p></div></div>`);
+        if (certCont) {
+            certCont.className = 'cert-grid';
+            certCont.innerHTML = '';
+            certs.forEach(c => {
+                const imgHtml = c.image_url 
+                    ? `<div class="cert-img-wrap" onclick="window.open('${c.image_url}', '_blank')" title="Click to view full certificate">
+                         <img src="${c.image_url}" alt="${c.name}" loading="lazy">
+                       </div>`
+                    : `<div class="cert-img-wrap">
+                         <div class="cert-no-img">
+                           <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                             <circle cx="12" cy="8" r="7"></circle>
+                             <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline>
+                           </svg>
+                           <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;">Verified</span>
+                         </div>
+                       </div>`;
+
+                certCont.innerHTML += `
+                    <div class="cert-card">
+                        ${imgHtml}
+                        <div class="cert-details">
+                            <h4>${c.name}</h4>
+                            <p>${c.issuer}</p>
+                        </div>
+                    </div>
+                `;
+            });
+        }
 
         const skillCont = document.getElementById('marquee-content');
         skills.forEach(s => skillCont.innerHTML += `<span>${s.name} • </span>`);
         // Duplicate for infinite scroll
         skillCont.innerHTML += skillCont.innerHTML;
 
-        const testCont = document.getElementById('test-container');
-        testimonials.forEach(t => testCont.innerHTML += `<div class="testimonial-card"><div class="quote-icon">“</div><p class="feedback">"${t.quote}"</p><div class="client-info"><h4>${t.client_name}</h4><p>${t.client_title}</p></div></div>`);
+        // Fetch Reviews / Testimonials (Approved only)
+        fetch('/api/reviews?status=approved')
+            .then(r => r.json())
+            .then(reviews => {
+                const testCont = document.getElementById('test-container');
+                if (testCont) {
+                    testCont.innerHTML = '';
+                    const items = reviews && reviews.length > 0 ? reviews : [];
+                    if (items.length === 0) {
+                        testCont.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: var(--grey-text); padding: 2.5rem; background: var(--card-bg); border-radius: 12px; border: 1px dashed var(--border-color);">No reviews yet. Be the first to give a review!</div>`;
+                    } else {
+                        items.forEach(t => {
+                            const reviewText = t.review_text || t.quote || '';
+                            const clientName = t.name || t.client_name || '';
+                            const clientTitle = t.designation || t.client_title || '';
+                            const rating = parseInt(t.rating) || 5;
+                            const starsHtml = rating > 0 ? `<div class="stars-display">${'★'.repeat(rating)}${'☆'.repeat(Math.max(0, 5 - rating))}</div>` : '';
+
+                            testCont.innerHTML += `
+                                <div class="testimonial-card">
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                        <div class="quote-icon">“</div>
+                                        ${starsHtml}
+                                    </div>
+                                    <p class="feedback">"${reviewText}"</p>
+                                    <div class="client-info">
+                                        <h4>${clientName}</h4>
+                                        <p>${clientTitle}</p>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                    }
+                }
+            })
+            .catch(err => console.error('Error fetching reviews:', err));
+
+        // --- Review Modal Handling ---
+        const reviewModal = document.getElementById('review-modal');
+        const openReviewModalBtn = document.getElementById('open-review-modal-btn');
+        const closeReviewModalBtn = document.getElementById('close-review-modal-btn');
+        const reviewForm = document.getElementById('public-review-form');
+        const reviewText = document.getElementById('review-text');
+        const charCount = document.getElementById('review-char-count');
+        const reviewStatus = document.getElementById('review-form-status');
+        const starButtons = document.querySelectorAll('.star-btn');
+        const reviewRatingInput = document.getElementById('review-rating');
+
+        const updateStars = (val) => {
+            starButtons.forEach(btn => {
+                const r = parseInt(btn.dataset.rating);
+                if (r <= val) btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+        };
+
+        if (openReviewModalBtn && reviewModal) {
+            openReviewModalBtn.addEventListener('click', () => {
+                reviewModal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+                if (reviewStatus) reviewStatus.style.display = 'none';
+            });
+
+            const closeReviewModal = () => {
+                reviewModal.style.display = 'none';
+                document.body.style.overflow = '';
+            };
+
+            if (closeReviewModalBtn) closeReviewModalBtn.addEventListener('click', closeReviewModal);
+
+            reviewModal.addEventListener('click', (e) => {
+                if (e.target === reviewModal) closeReviewModal();
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && reviewModal.style.display === 'flex') {
+                    closeReviewModal();
+                }
+            });
+
+            // Character counter
+            if (reviewText && charCount) {
+                reviewText.addEventListener('input', () => {
+                    const currentLen = reviewText.value.length;
+                    charCount.textContent = `${currentLen} / 300`;
+                    if (currentLen >= 280) charCount.style.color = 'var(--red-accent)';
+                    else charCount.style.color = 'var(--grey-text)';
+                });
+            }
+
+            // Star rating picker
+            if (starButtons.length > 0 && reviewRatingInput) {
+                starButtons.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const ratingVal = parseInt(btn.dataset.rating);
+                        reviewRatingInput.value = ratingVal;
+                        updateStars(ratingVal);
+                    });
+                    btn.addEventListener('mouseenter', () => {
+                        const ratingVal = parseInt(btn.dataset.rating);
+                        starButtons.forEach(b => {
+                            const r = parseInt(b.dataset.rating);
+                            if (r <= ratingVal) b.classList.add('hover');
+                            else b.classList.remove('hover');
+                        });
+                    });
+                    btn.addEventListener('mouseleave', () => {
+                        starButtons.forEach(b => b.classList.remove('hover'));
+                    });
+                });
+            }
+
+            // Form submit
+            if (reviewForm) {
+                reviewForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const submitBtn = document.getElementById('submit-review-btn');
+                    const origText = submitBtn ? submitBtn.textContent : 'Submit Review';
+                    
+                    const payload = {
+                        name: document.getElementById('review-name').value,
+                        designation: document.getElementById('review-designation').value,
+                        review_text: document.getElementById('review-text').value,
+                        rating: parseInt(reviewRatingInput.value) || 5
+                    };
+
+                    try {
+                        if (submitBtn) {
+                            submitBtn.disabled = true;
+                            submitBtn.textContent = 'Submitting...';
+                        }
+
+                        const res = await fetch('/api/reviews', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        const data = await res.json();
+
+                        if (res.ok) {
+                            reviewStatus.style.display = 'block';
+                            reviewStatus.style.background = 'rgba(16, 185, 129, 0.15)';
+                            reviewStatus.style.color = '#10b981';
+                            reviewStatus.style.border = '1px solid #10b981';
+                            reviewStatus.textContent = data.message || "Thanks! Your review will appear after approval.";
+                            reviewForm.reset();
+                            if (charCount) charCount.textContent = '0 / 300';
+                            reviewRatingInput.value = 5;
+                            updateStars(5);
+
+                            setTimeout(() => {
+                                closeReviewModal();
+                            }, 2500);
+                        } else {
+                            reviewStatus.style.display = 'block';
+                            reviewStatus.style.background = 'rgba(239, 68, 68, 0.15)';
+                            reviewStatus.style.color = '#ef4444';
+                            reviewStatus.style.border = '1px solid #ef4444';
+                            reviewStatus.textContent = data.error || "Failed to submit review. Please try again.";
+                        }
+                    } catch (err) {
+                        reviewStatus.style.display = 'block';
+                        reviewStatus.style.background = 'rgba(239, 68, 68, 0.15)';
+                        reviewStatus.style.color = '#ef4444';
+                        reviewStatus.style.border = '1px solid #ef4444';
+                        reviewStatus.textContent = "Network error. Please try again.";
+                    } finally {
+                        if (submitBtn) {
+                            submitBtn.disabled = false;
+                            submitBtn.textContent = origText;
+                        }
+                    }
+                });
+            }
+        }
 
         // --- Initialize GSAP Animations ---
         initAnimations();
@@ -418,7 +619,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(container && data && data.length > 0) {
                     let html = '';
                     data.forEach(content => {
-                        // We can use section_placement if needed, but for now just render it
                         html += `
                             <div class="custom-block" style="margin-bottom: 2rem; max-width: 800px; margin-left: auto; margin-right: auto; text-align: center;">
                                 <h2 style="margin-bottom: 1rem; color: var(--heading-color);">${content.title}</h2>

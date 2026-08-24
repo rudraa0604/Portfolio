@@ -118,14 +118,18 @@ db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS certifications (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT,
-        issuer TEXT
+        issuer TEXT,
+        image_url TEXT
     )`);
+    db.run(`ALTER TABLE certifications ADD COLUMN image_url TEXT`, (err) => {
+        // Ignore error if column already exists
+    });
     db.get("SELECT COUNT(*) AS count FROM certifications", (err, row) => {
         if (row && row.count === 0) {
-            const stmt = db.prepare("INSERT INTO certifications (name, issuer) VALUES (?, ?)");
-            stmt.run("Ethical Hacking Masterclass", "WSCUBE Tech");
-            stmt.run("SOAR: AI to be Aware", "HCL Technologies");
-            stmt.run("Digital Identity Workshop", "CSJM University");
+            const stmt = db.prepare("INSERT INTO certifications (name, issuer, image_url) VALUES (?, ?, ?)");
+            stmt.run("Ethical Hacking Masterclass", "WSCUBE Tech", "");
+            stmt.run("SOAR: AI to be Aware", "HCL Technologies", "");
+            stmt.run("Digital Identity Workshop", "CSJM University", "");
             stmt.finalize();
         }
     });
@@ -146,18 +150,29 @@ db.serialize(() => {
         }
     });
 
-    // 7. Testimonials Table
+    // 7. Testimonials Table (Legacy)
     db.run(`CREATE TABLE IF NOT EXISTS testimonials (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         quote TEXT,
         client_name TEXT,
         client_title TEXT
     )`);
-    db.get("SELECT COUNT(*) AS count FROM testimonials", (err, row) => {
+
+    // 7b. Reviews Table (with Approval Workflow & Ratings)
+    db.run(`CREATE TABLE IF NOT EXISTS reviews (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        designation TEXT NOT NULL,
+        review_text TEXT NOT NULL,
+        rating INTEGER DEFAULT 5,
+        status TEXT DEFAULT 'pending',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+    db.get("SELECT COUNT(*) AS count FROM reviews", (err, row) => {
         if (row && row.count === 0) {
-            const stmt = db.prepare("INSERT INTO testimonials (quote, client_name, client_title) VALUES (?, ?, ?)");
-            stmt.run("Rudra is incredibly talented. His grasp of graphic design combined with his growing technical skills make him a unique asset to any project.", "Sarah J.", "Project Manager");
-            stmt.run("Great attention to detail and visual hierarchy. Delivered the social media layouts exactly as we envisioned.", "Michael T.", "Marketing Director");
+            const stmt = db.prepare("INSERT INTO reviews (name, designation, review_text, rating, status) VALUES (?, ?, ?, ?, 'approved')");
+            stmt.run("Sarah J.", "Project Manager", "Rudra is incredibly talented. His grasp of graphic design combined with his growing technical skills make him a unique asset to any project.", 5);
+            stmt.run("Michael T.", "Marketing Director", "Great attention to detail and visual hierarchy. Delivered the social media layouts exactly as we envisioned.", 5);
             stmt.finalize();
         }
     });

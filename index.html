@@ -213,6 +213,9 @@
         <section class="testimonials" id="testimonials">
             <div class="section-header">
                 <h2>CLIENT TESTIMONIALS</h2>
+                <button id="open-review-modal-btn" class="btn outline-btn" style="font-size: 0.85rem; padding: 0.5rem 1.25rem; display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                    <span>✍️ Give Review</span>
+                </button>
             </div>
             <div class="testimonial-grid" id="test-container"></div>
         </section>
@@ -272,6 +275,48 @@
                 </div>
             </div>
         </footer>
+    </div>
+    
+    <!-- Review Modal -->
+    <div id="review-modal" class="review-modal-overlay" style="display: none;">
+        <div class="review-modal-card">
+            <div class="review-modal-header">
+                <h3>Give a Review</h3>
+                <button type="button" id="close-review-modal-btn" class="close-modal-btn" aria-label="Close">&times;</button>
+            </div>
+            <form id="public-review-form">
+                <div class="modal-form-group">
+                    <label for="review-name">Your Name <span style="color: var(--red-accent);">*</span></label>
+                    <input type="text" id="review-name" class="modal-form-control" required placeholder="e.g. Rahul Sharma" maxlength="100">
+                </div>
+                <div class="modal-form-group">
+                    <label for="review-designation">Designation / Role / Team <span style="color: var(--red-accent);">*</span></label>
+                    <input type="text" id="review-designation" class="modal-form-control" required placeholder="e.g. Hackathon Teammate / Client" maxlength="120">
+                </div>
+                <div class="modal-form-group">
+                    <label>Rating (Optional)</label>
+                    <div class="star-rating-select" id="modal-star-rating">
+                        <span class="star-btn active" data-rating="1">★</span>
+                        <span class="star-btn active" data-rating="2">★</span>
+                        <span class="star-btn active" data-rating="3">★</span>
+                        <span class="star-btn active" data-rating="4">★</span>
+                        <span class="star-btn active" data-rating="5">★</span>
+                    </div>
+                    <input type="hidden" id="review-rating" value="5">
+                </div>
+                <div class="modal-form-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <label for="review-text">Review / Feedback <span style="color: var(--red-accent);">*</span></label>
+                        <span id="review-char-count" style="font-size: 0.75rem; color: var(--grey-text);">0 / 300</span>
+                    </div>
+                    <textarea id="review-text" class="modal-form-control" rows="4" required maxlength="300" placeholder="Write your review or feedback here..."></textarea>
+                </div>
+                <div id="review-form-status" style="display: none; padding: 0.8rem; border-radius: 8px; font-size: 0.9rem; margin-bottom: 1rem; text-align: center;"></div>
+                <button type="submit" id="submit-review-btn" class="btn solid-btn" style="width: 100%; justify-content: center;">
+                    Submit Review
+                </button>
+            </form>
+        </div>
     </div>
     
     <!-- CDNs -->

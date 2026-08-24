@@ -45,7 +45,7 @@
                 <li class="nav-item" data-target="quote-section">💬 Quote Box</li>
                 <li class="nav-item" data-target="footer-box-section">📝 Footer Box</li>
                 <li class="nav-item" data-target="achievements-section">🏆 Certifications & Awards</li>
-                <li class="nav-item" data-target="testimonials-section">⭐ Client Testimonials</li>
+                <li class="nav-item" data-target="reviews-section">⭐ Client Reviews <span id="pending-reviews-badge" style="display: none; background: #f59e0b; color: #000; font-size: 0.75rem; font-weight: 700; padding: 2px 7px; border-radius: 10px; margin-left: 6px;">0</span></li>
                 <li class="nav-item" data-target="custom-content-section">✍️ Custom Content</li>
                 <li class="nav-item" data-target="theme-section">🎨 Theme Switcher</li>
             </ul>
@@ -84,7 +84,10 @@
                                 <div class="file-upload-btn" id="prof-photo-label">Choose a photo or drop it here...</div>
                             </div>
                             <input type="hidden" id="prof-photo-url">
-                            <img id="prof-photo-preview" class="image-preview" style="display: none;">
+                            <div id="prof-photo-container" style="margin-top: 1rem; display: none; align-items: center; gap: 1.5rem;">
+                                <img id="prof-photo-preview" class="image-preview" style="margin-top: 0; width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">
+                                <button type="button" id="prof-photo-remove" class="btn danger" style="width: auto; padding: 0.4rem 0.9rem; font-size: 0.85rem;">Remove Photo</button>
+                            </div>
                         </div>
                     </div>
 
@@ -315,9 +318,21 @@
                         </div>
                         <div class="form-group">
                             <label>Issuer / Organization</label>
-                            <input type="text" id="achievement-issuer" class="form-control" required>
+                            <input type="text" id="achievement-issuer" class="form-control" required placeholder="e.g. Google, Coursera, CSJM University">
                         </div>
-                        <button type="submit" class="btn">Save Achievement</button>
+                        <div class="form-group">
+                            <label>Certificate Image / Photo</label>
+                            <div class="custom-file-upload">
+                                <input type="file" id="achievement-image-upload" accept="image/jpeg,image/png,image/webp,image/jpg">
+                                <div class="file-upload-btn" id="achievement-image-label">Choose certificate image (.jpg, .png, .webp)...</div>
+                            </div>
+                            <input type="hidden" id="achievement-image-url">
+                            <div id="achievement-image-preview-container" style="margin-top: 1rem; display: none; align-items: center; gap: 1.5rem;">
+                                <img id="achievement-image-preview" class="image-preview" style="margin-top: 0; max-height: 120px; border-radius: 8px; object-fit: contain; background: #000; border: 1px solid var(--border);">
+                                <button type="button" id="achievement-image-remove" class="btn danger" style="width: auto; padding: 0.4rem 0.9rem; font-size: 0.85rem;">Remove Image</button>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn">Save Certification</button>
                         <button type="button" class="btn danger" id="cancel-achievement-btn" style="margin-top: 1rem;">Cancel</button>
                     </form>
                 </div>
@@ -327,36 +342,67 @@
                 </div>
             </section>
 
-            <!-- Testimonials Section -->
-            <section id="testimonials-section" class="section">
+            <!-- Reviews Section -->
+            <section id="reviews-section" class="section">
                 <div class="section-header">
-                    <h1>Client Testimonials</h1>
-                    <button class="btn" id="add-testimonial-btn" style="width: auto;">+ Add Testimonial</button>
+                    <div>
+                        <h1>Client Reviews & Approvals</h1>
+                        <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.3rem;">
+                            Approve or reject public submissions from visitors. Only approved reviews appear on your live site.
+                        </p>
+                    </div>
+                    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;">
+                        <div class="filter-btn-group" style="display: flex; gap: 0.35rem; background: var(--sidebar-bg); padding: 4px; border-radius: 8px; border: 1px solid var(--border);">
+                            <button type="button" class="filter-tab-btn active" data-filter="all">All</button>
+                            <button type="button" class="filter-tab-btn" data-filter="pending">Pending (<span id="pending-count-tab">0</span>)</button>
+                            <button type="button" class="filter-tab-btn" data-filter="approved">Approved</button>
+                            <button type="button" class="filter-tab-btn" data-filter="rejected">Rejected</button>
+                        </div>
+                        <button class="btn" id="add-review-btn" style="width: auto; padding: 0.5rem 1.25rem;">+ Add Review</button>
+                    </div>
                 </div>
 
-                <div class="card" id="testimonial-form-card" style="display: none;">
-                    <h3 id="testimonial-form-title">Add Testimonial</h3>
-                    <form id="testimonial-form">
-                        <input type="hidden" id="testimonial-id">
+                <div class="card" id="review-form-card" style="display: none;">
+                    <h3 id="review-form-title">Add Client Review</h3>
+                    <form id="admin-review-form">
+                        <input type="hidden" id="admin-review-id">
                         <div class="form-group">
                             <label>Client Name</label>
-                            <input type="text" id="testimonial-client-name" class="form-control" required placeholder="e.g. Sarah J.">
+                            <input type="text" id="admin-review-name" class="form-control" required placeholder="e.g. Sarah J.">
                         </div>
                         <div class="form-group">
-                            <label>Client Title / Role / Company</label>
-                            <input type="text" id="testimonial-client-title" class="form-control" required placeholder="e.g. Project Manager">
+                            <label>Designation / Role / Company</label>
+                            <input type="text" id="admin-review-designation" class="form-control" required placeholder="e.g. Project Manager, TechCorp">
                         </div>
                         <div class="form-group">
-                            <label>Review / Feedback Quote</label>
-                            <textarea id="testimonial-quote" class="form-control" required placeholder="Write client's review here..."></textarea>
+                            <label>Star Rating (1 - 5)</label>
+                            <select id="admin-review-rating" class="form-control">
+                                <option value="5">★★★★★ (5 Stars)</option>
+                                <option value="4">★★★★☆ (4 Stars)</option>
+                                <option value="3">★★★☆☆ (3 Stars)</option>
+                                <option value="2">★★☆☆☆ (2 Stars)</option>
+                                <option value="1">★☆☆☆☆ (1 Star)</option>
+                            </select>
                         </div>
-                        <button type="submit" class="btn">Save Testimonial</button>
-                        <button type="button" class="btn danger" id="cancel-testimonial-btn" style="margin-top: 1rem;">Cancel</button>
+                        <div class="form-group">
+                            <label>Review / Feedback Text</label>
+                            <textarea id="admin-review-text" class="form-control" required placeholder="Write the client's review feedback..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Approval Status</label>
+                            <select id="admin-review-status" class="form-control">
+                                <option value="approved">Approved (Visible on Live Website)</option>
+                                <option value="pending">Pending (Hidden)</option>
+                                <option value="rejected">Rejected (Hidden)</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn">Save Review</button>
+                        <button type="button" class="btn danger" id="cancel-admin-review-btn" style="margin-top: 1rem;">Cancel</button>
                     </form>
                 </div>
 
-                <div class="item-list" id="testimonials-list">
-                    <!-- Loaded dynamically -->
+                <div class="item-list" id="reviews-list">
+                    <!-- Reviews loaded dynamically -->
                 </div>
             </section>
 

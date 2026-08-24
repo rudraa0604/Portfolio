@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loadEducation();
         loadProjects();
         loadAchievements();
-        loadTestimonials();
+        loadReviews();
         loadCustomContent();
         loadTheme();
     };
@@ -147,10 +147,26 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('prof-footer-topic').value = data.footer_topic || '';
         document.getElementById('prof-footer-desc').value = data.footer_desc || '';
         
+        // Photo Preview Setup
         document.getElementById('prof-photo-url').value = data.profile_photo || '';
+        const photoContainer = document.getElementById('prof-photo-container');
+        const photoPreview = document.getElementById('prof-photo-preview');
+        const photoLabel = document.getElementById('prof-photo-label');
         if (data.profile_photo) {
-            document.getElementById('prof-photo-preview').src = data.profile_photo;
-            document.getElementById('prof-photo-preview').style.display = 'block';
+            if (photoPreview) photoPreview.src = data.profile_photo;
+            if (photoContainer) photoContainer.style.display = 'flex';
+            if (photoLabel) {
+                photoLabel.textContent = '✓ Photo active (Click to change)';
+                photoLabel.style.borderColor = 'var(--success)';
+                photoLabel.style.color = 'var(--success)';
+            }
+        } else {
+            if (photoContainer) photoContainer.style.display = 'none';
+            if (photoLabel) {
+                photoLabel.textContent = 'Choose a photo or drop it here...';
+                photoLabel.style.borderColor = '';
+                photoLabel.style.color = '';
+            }
         }
 
         // Resume Preview Setup
@@ -180,6 +196,68 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Instant Photo Upload & Auto-Save
+    const photoUploadInput = document.getElementById('prof-photo-upload');
+    if (photoUploadInput) {
+        photoUploadInput.addEventListener('change', async (e) => {
+            if (e.target.files.length > 0) {
+                const file = e.target.files[0];
+                const photoLabel = document.getElementById('prof-photo-label');
+                if (photoLabel) photoLabel.textContent = `Uploading ${file.name}...`;
+                showToast('Uploading photo...');
+                try {
+                    const uploadedUrl = await uploadFile(file);
+                    document.getElementById('prof-photo-url').value = uploadedUrl;
+                    const photoPreview = document.getElementById('prof-photo-preview');
+                    const photoContainer = document.getElementById('prof-photo-container');
+                    if (photoPreview) photoPreview.src = uploadedUrl;
+                    if (photoContainer) photoContainer.style.display = 'flex';
+                    if (photoLabel) {
+                        photoLabel.textContent = `✓ Photo: ${file.name} (Click to change)`;
+                        photoLabel.style.borderColor = 'var(--success)';
+                        photoLabel.style.color = 'var(--success)';
+                    }
+                    
+                    await fetch('/api/profile', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ profile_photo: uploadedUrl })
+                    });
+                    await loadProfile();
+                    showToast('Photo uploaded and saved successfully!');
+                } catch (err) {
+                    showToast('Photo upload error: ' + err.message, true);
+                    if (photoLabel) photoLabel.textContent = 'Choose a photo or drop it here...';
+                }
+            }
+        });
+    }
+
+    // Photo Remove Button
+    const photoRemoveBtn = document.getElementById('prof-photo-remove');
+    if (photoRemoveBtn) {
+        photoRemoveBtn.addEventListener('click', async () => {
+            if (!confirm('Are you sure you want to remove this photo?')) return;
+            document.getElementById('prof-photo-url').value = '';
+            if (photoUploadInput) photoUploadInput.value = '';
+            const photoContainer = document.getElementById('prof-photo-container');
+            if (photoContainer) photoContainer.style.display = 'none';
+            const photoLabel = document.getElementById('prof-photo-label');
+            if (photoLabel) {
+                photoLabel.textContent = 'Choose a photo or drop it here...';
+                photoLabel.style.borderColor = '';
+                photoLabel.style.color = '';
+            }
+            await fetch('/api/profile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ profile_photo: '' })
+            });
+            await loadProfile();
+            showToast('Photo removed successfully!');
+        });
+    }
+
     // Instant Resume Upload & Auto-Save
     const resumeUploadInput = document.getElementById('prof-resume-upload');
     const resumeLabel = document.getElementById('prof-resume-label');
@@ -193,45 +271,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     const uploadedUrl = await uploadFile(file);
                     document.getElementById('prof-resume-url').value = uploadedUrl;
                     
-                    const updatedBody = {
-                        ...profileDataRaw,
-                        name: document.getElementById('prof-name').value || profileDataRaw.name,
-                        title: document.getElementById('prof-title').value || profileDataRaw.title,
-                        description: document.getElementById('prof-desc').value || profileDataRaw.description,
-                        email: document.getElementById('prof-email').value || profileDataRaw.email,
-                        phone: document.getElementById('prof-phone').value || profileDataRaw.phone,
-                        whatsapp: document.getElementById('prof-phone').value || profileDataRaw.whatsapp,
-                        location: document.getElementById('prof-location').value || profileDataRaw.location,
-                        website: document.getElementById('prof-website').value || profileDataRaw.website,
-                        linkedin: document.getElementById('prof-linkedin').value || profileDataRaw.linkedin,
-                        availability: document.getElementById('prof-availability').value || profileDataRaw.availability,
-                        quote_text: document.getElementById('prof-quote-text').value || profileDataRaw.quote_text,
-                        quote_footer: document.getElementById('prof-quote-footer').value || profileDataRaw.quote_footer,
-                        profile_photo: document.getElementById('prof-photo-url').value || profileDataRaw.profile_photo,
-                        resume_url: uploadedUrl
-                    };
-
-                    const res = await fetch('/api/profile', {
+                    await fetch('/api/profile', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(updatedBody)
+                        body: JSON.stringify({ resume_url: uploadedUrl })
                     });
 
-                    if (res.ok) {
-                        profileDataRaw = updatedBody;
-                        const resumePreview = document.getElementById('prof-resume-preview');
-                        const resumeName = document.getElementById('prof-resume-name');
-                        const resumeLink = document.getElementById('prof-resume-link');
-                        resumeName.textContent = file.name;
-                        resumeLink.href = uploadedUrl;
-                        resumePreview.style.display = 'flex';
-                        resumeLabel.textContent = `✓ Active Resume: ${file.name} (Click to change)`;
-                        resumeLabel.style.borderColor = 'var(--success)';
-                        resumeLabel.style.color = 'var(--success)';
-                        showToast('Resume uploaded and saved successfully!');
-                    } else {
-                        showToast('Failed to save resume into profile', true);
-                    }
+                    await loadProfile();
+                    showToast('Resume uploaded and saved successfully!');
                 } catch (err) {
                     showToast('Upload error: ' + err.message, true);
                     resumeLabel.textContent = 'Choose a resume file (.pdf, .docx)...';
@@ -247,24 +294,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!confirm('Are you sure you want to delete this resume?')) return;
             document.getElementById('prof-resume-url').value = '';
             if (resumeUploadInput) resumeUploadInput.value = '';
-            if (resumeLabel) {
-                resumeLabel.textContent = 'Choose a resume file (.pdf, .docx)...';
-                resumeLabel.style.borderColor = '';
-                resumeLabel.style.color = '';
-            }
             const resumePreview = document.getElementById('prof-resume-preview');
             if (resumePreview) resumePreview.style.display = 'none';
 
-            const updatedBody = {
-                ...profileDataRaw,
-                resume_url: ''
-            };
             await fetch('/api/profile', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updatedBody)
+                body: JSON.stringify({ resume_url: '' })
             });
-            profileDataRaw = updatedBody;
+            await loadProfile();
             showToast('Resume removed successfully!');
         });
     }
@@ -272,27 +310,11 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('profile-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        const photoInput = document.getElementById('prof-photo-upload');
         let profile_photo = document.getElementById('prof-photo-url').value;
-
-        const resumeInput = document.getElementById('prof-resume-upload');
         let resume_url = document.getElementById('prof-resume-url').value;
 
         try {
-            if (photoInput.files.length > 0) {
-                profile_photo = await uploadFile(photoInput.files[0]);
-                document.getElementById('prof-photo-url').value = profile_photo;
-                document.getElementById('prof-photo-preview').src = profile_photo;
-                document.getElementById('prof-photo-preview').style.display = 'block';
-            }
-
-            if (resumeInput && resumeInput.files.length > 0 && !resume_url) {
-                resume_url = await uploadFile(resumeInput.files[0]);
-                document.getElementById('prof-resume-url').value = resume_url;
-            }
-
             const body = {
-                ...profileDataRaw,
                 name: document.getElementById('prof-name').value,
                 title: document.getElementById('prof-title').value,
                 description: document.getElementById('prof-desc').value,
@@ -303,8 +325,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 website: document.getElementById('prof-website').value,
                 linkedin: document.getElementById('prof-linkedin').value,
                 availability: document.getElementById('prof-availability').value,
-                quote_text: document.getElementById('prof-quote-text').value,
-                quote_footer: document.getElementById('prof-quote-footer').value,
                 profile_photo: profile_photo,
                 resume_url: resume_url
             };
@@ -316,10 +336,8 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (res.ok) {
-                showToast('Profile and Resume saved!');
-                photoInput.value = '';
-                document.getElementById('prof-photo-label').textContent = 'Choose a photo or drop it here...';
-                profileDataRaw = body;
+                showToast('Profile and Links saved successfully!');
+                await loadProfile();
             } else {
                 showToast('Error saving profile', true);
             }
@@ -332,7 +350,6 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         try {
             const body = {
-                ...profileDataRaw,
                 quote_text: document.getElementById('prof-quote-text').value,
                 quote_footer: document.getElementById('prof-quote-footer').value
             };
@@ -342,9 +359,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify(body)
             });
             if (res.ok) {
-                showToast('Quote saved!');
-                profileDataRaw.quote_text = body.quote_text;
-                profileDataRaw.quote_footer = body.quote_footer;
+                showToast('Quote saved successfully!');
+                await loadProfile();
             } else {
                 showToast('Error saving quote', true);
             }
@@ -371,7 +387,6 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         try {
             const body = {
-                ...profileDataRaw,
                 footer_topic: document.getElementById('prof-footer-topic').value,
                 footer_desc: document.getElementById('prof-footer-desc').value
             };
@@ -381,9 +396,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify(body)
             });
             if (res.ok) {
-                showToast('Footer Box saved!');
-                profileDataRaw.footer_topic = body.footer_topic;
-                profileDataRaw.footer_desc = body.footer_desc;
+                showToast('Footer Box saved successfully!');
+                await loadProfile();
             } else {
                 showToast('Error saving footer box', true);
             }
@@ -632,7 +646,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- Achievements ---
+    // --- Achievements / Certifications ---
     const loadAchievements = async () => {
         const res = await fetch('/api/certifications');
         const data = await res.json();
@@ -641,10 +655,18 @@ document.addEventListener('DOMContentLoaded', () => {
         data.forEach(item => {
             const div = document.createElement('div');
             div.className = 'item-row';
+            
+            const thumbHtml = item.image_url 
+                ? `<img src="${item.image_url}" alt="${item.name}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); flex-shrink: 0; background: #000;">`
+                : `<div style="width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border-radius: 8px; border: 1px dashed var(--border); font-size: 1.4rem; flex-shrink: 0;">📜</div>`;
+
             div.innerHTML = `
-                <div class="item-info">
-                    <h4></h4>
-                    <p></p>
+                <div style="display: flex; gap: 1.25rem; align-items: center; flex: 1;">
+                    ${thumbHtml}
+                    <div class="item-info">
+                        <h4 style="margin-bottom: 0.25rem; font-size: 1rem;"></h4>
+                        <p style="color: var(--text-secondary); font-size: 0.85rem;"></p>
+                    </div>
                 </div>
                 <div class="item-actions">
                     <button type="button" class="btn edit-btn">Edit</button>
@@ -653,32 +675,127 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             div.querySelector('h4').textContent = item.name;
             div.querySelector('p').textContent = item.issuer;
-            div.querySelector('.edit-btn').addEventListener('click', () => editAchievement(item.id, item.name, item.issuer));
+            div.querySelector('.edit-btn').addEventListener('click', () => editAchievement(item));
             div.querySelector('.delete-btn').addEventListener('click', () => deleteAchievement(item.id));
             list.appendChild(div);
         });
     };
 
-    window.editAchievement = (id, name, issuer) => {
-        document.getElementById('achievement-id').value = id;
-        document.getElementById('achievement-title').value = name;
-        document.getElementById('achievement-issuer').value = issuer;
+    // Instant Certificate Image Selection & Upload
+    const certImageUploadInput = document.getElementById('achievement-image-upload');
+    const certImageLabel = document.getElementById('achievement-image-label');
+    const certImagePreview = document.getElementById('achievement-image-preview');
+    const certImagePreviewCont = document.getElementById('achievement-image-preview-container');
+    const certImageUrlInput = document.getElementById('achievement-image-url');
+
+    if (certImageUploadInput) {
+        certImageUploadInput.addEventListener('change', async (e) => {
+            if (e.target.files.length > 0) {
+                const file = e.target.files[0];
+                
+                // File validation: Size <= 5MB
+                if (file.size > 5 * 1024 * 1024) {
+                    showToast('File is too large. Max size is 5MB.', true);
+                    e.target.value = '';
+                    return;
+                }
+
+                // File validation: Image type
+                const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+                if (!validTypes.includes(file.type)) {
+                    showToast('Invalid format. Please upload JPG, PNG, or WEBP.', true);
+                    e.target.value = '';
+                    return;
+                }
+
+                if (certImageLabel) certImageLabel.textContent = `Uploading ${file.name}...`;
+                showToast('Uploading certificate image...');
+
+                try {
+                    const uploadedUrl = await uploadFile(file);
+                    if (certImageUrlInput) certImageUrlInput.value = uploadedUrl;
+                    if (certImagePreview) certImagePreview.src = uploadedUrl;
+                    if (certImagePreviewCont) certImagePreviewCont.style.display = 'flex';
+                    if (certImageLabel) {
+                        certImageLabel.textContent = `✓ Active Image: ${file.name} (Click to change)`;
+                        certImageLabel.style.borderColor = 'var(--success)';
+                        certImageLabel.style.color = 'var(--success)';
+                    }
+                    showToast('Certificate image uploaded!');
+                } catch (err) {
+                    showToast('Upload failed: ' + err.message, true);
+                    if (certImageLabel) certImageLabel.textContent = 'Choose certificate image (.jpg, .png, .webp)...';
+                }
+            }
+        });
+    }
+
+    const certImageRemoveBtn = document.getElementById('achievement-image-remove');
+    if (certImageRemoveBtn) {
+        certImageRemoveBtn.addEventListener('click', () => {
+            if (certImageUrlInput) certImageUrlInput.value = '';
+            if (certImageUploadInput) certImageUploadInput.value = '';
+            if (certImagePreviewCont) certImagePreviewCont.style.display = 'none';
+            if (certImageLabel) {
+                certImageLabel.textContent = 'Choose certificate image (.jpg, .png, .webp)...';
+                certImageLabel.style.borderColor = '';
+                certImageLabel.style.color = '';
+            }
+            showToast('Certificate image removed');
+        });
+    }
+
+    window.editAchievement = (item) => {
+        document.getElementById('achievement-id').value = item.id;
+        document.getElementById('achievement-title').value = item.name || '';
+        document.getElementById('achievement-issuer').value = item.issuer || '';
+        
+        const imgUrl = item.image_url || '';
+        if (certImageUrlInput) certImageUrlInput.value = imgUrl;
+        if (certImageUploadInput) certImageUploadInput.value = '';
+
+        if (imgUrl) {
+            if (certImagePreview) certImagePreview.src = imgUrl;
+            if (certImagePreviewCont) certImagePreviewCont.style.display = 'flex';
+            if (certImageLabel) {
+                certImageLabel.textContent = '✓ Certificate image active (Click to change)';
+                certImageLabel.style.borderColor = 'var(--success)';
+                certImageLabel.style.color = 'var(--success)';
+            }
+        } else {
+            if (certImagePreviewCont) certImagePreviewCont.style.display = 'none';
+            if (certImageLabel) {
+                certImageLabel.textContent = 'Choose certificate image (.jpg, .png, .webp)...';
+                certImageLabel.style.borderColor = '';
+                certImageLabel.style.color = '';
+            }
+        }
+
         document.getElementById('achievement-form-card').style.display = 'block';
-        document.getElementById('achievement-form-title').textContent = 'Edit Achievement';
+        document.getElementById('achievement-form-title').textContent = 'Edit Certification';
+        document.getElementById('achievement-form-card').scrollIntoView({ behavior: 'smooth' });
     };
 
     window.deleteAchievement = async (id) => {
-        if (!confirm('Are you sure?')) return;
+        if (!confirm('Are you sure you want to delete this certification?')) return;
         await fetch(`/api/certifications/${id}`, { method: 'DELETE' });
-        showToast('Achievement deleted');
+        showToast('Certification deleted');
         loadAchievements();
     };
 
     document.getElementById('add-achievement-btn').addEventListener('click', () => {
         document.getElementById('achievement-form').reset();
         document.getElementById('achievement-id').value = '';
+        if (certImageUrlInput) certImageUrlInput.value = '';
+        if (certImagePreviewCont) certImagePreviewCont.style.display = 'none';
+        if (certImageLabel) {
+            certImageLabel.textContent = 'Choose certificate image (.jpg, .png, .webp)...';
+            certImageLabel.style.borderColor = '';
+            certImageLabel.style.color = '';
+        }
         document.getElementById('achievement-form-card').style.display = 'block';
-        document.getElementById('achievement-form-title').textContent = 'Add Achievement';
+        document.getElementById('achievement-form-title').textContent = 'Add Certification';
+        document.getElementById('achievement-form-card').scrollIntoView({ behavior: 'smooth' });
     });
 
     document.getElementById('cancel-achievement-btn').addEventListener('click', () => {
@@ -690,97 +807,234 @@ document.addEventListener('DOMContentLoaded', () => {
         const id = document.getElementById('achievement-id').value;
         const name = document.getElementById('achievement-title').value;
         const issuer = document.getElementById('achievement-issuer').value;
+        const image_url = certImageUrlInput ? certImageUrlInput.value : '';
 
         const url = id ? `/api/certifications/${id}` : '/api/certifications';
         const method = id ? 'PUT' : 'POST';
 
-        await fetch(url, {
-            method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, issuer })
+        try {
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, issuer, image_url })
+            });
+            
+            if (res.ok) {
+                showToast('Certification saved successfully!');
+                document.getElementById('achievement-form-card').style.display = 'none';
+                loadAchievements();
+            } else {
+                showToast('Error saving certification', true);
+            }
+        } catch (err) {
+            showToast('Error: ' + err.message, true);
+        }
+    });
+
+    // --- Client Reviews & Approvals ---
+    let currentReviewFilter = 'all';
+    let allReviewsCache = [];
+
+    const loadReviews = async (filter = currentReviewFilter) => {
+        currentReviewFilter = filter;
+        try {
+            const res = await fetch('/api/reviews');
+            if (!res.ok) return;
+            const data = await res.json();
+            allReviewsCache = Array.isArray(data) ? data : [];
+
+            // Update pending count in badge and tab
+            const pendingCount = allReviewsCache.filter(r => r.status === 'pending').length;
+            const badge = document.getElementById('pending-reviews-badge');
+            const tabCount = document.getElementById('pending-count-tab');
+            if (badge) {
+                badge.textContent = pendingCount;
+                badge.style.display = pendingCount > 0 ? 'inline-block' : 'none';
+            }
+            if (tabCount) tabCount.textContent = pendingCount;
+
+            // Filter reviews for display
+            let displayList = allReviewsCache;
+            if (filter !== 'all') {
+                displayList = allReviewsCache.filter(r => r.status === filter);
+            }
+
+            const list = document.getElementById('reviews-list');
+            if (!list) return;
+            list.innerHTML = '';
+
+            if (displayList.length === 0) {
+                list.innerHTML = `<div style="text-align: center; color: var(--text-secondary); padding: 3rem; background: var(--card-bg); border-radius: 10px; border: 1px dashed var(--border);">No ${filter !== 'all' ? filter : ''} reviews found.</div>`;
+                return;
+            }
+
+            displayList.forEach(item => {
+                const div = document.createElement('div');
+                div.className = `review-item-row ${item.status === 'pending' ? 'pending-highlight' : ''}`;
+                
+                const ratingNum = parseInt(item.rating) || 5;
+                const stars = '★'.repeat(ratingNum) + '☆'.repeat(Math.max(0, 5 - ratingNum));
+                const dateStr = item.created_at ? new Date(item.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+
+                div.innerHTML = `
+                    <div class="item-info" style="flex: 1;">
+                        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.35rem; flex-wrap: wrap;">
+                            <h4 style="margin: 0; font-size: 1.05rem;"></h4>
+                            <span class="badge-status badge-${item.status}">${item.status}</span>
+                            <span style="color: #f59e0b; font-size: 0.95rem; letter-spacing: 1px;">${stars}</span>
+                            ${dateStr ? `<span style="color: var(--text-secondary); font-size: 0.8rem;">• ${dateStr}</span>` : ''}
+                        </div>
+                        <p class="role-text" style="color: var(--accent); font-size: 0.85rem; margin-bottom: 0.5rem;"></p>
+                        <p class="quote-preview" style="color: var(--text-primary); font-size: 0.95rem; line-height: 1.5; background: rgba(0,0,0,0.15); padding: 0.75rem 1rem; border-radius: 6px; border-left: 3px solid var(--border);"></p>
+                    </div>
+                    <div class="item-actions">
+                        ${item.status === 'pending' ? `
+                            <button type="button" class="btn success approve-btn">✓ Approve</button>
+                            <button type="button" class="btn danger reject-btn">✕ Reject</button>
+                        ` : item.status === 'approved' ? `
+                            <button type="button" class="btn reject-btn" style="background: #4b5563; color: #fff;">Reject / Hide</button>
+                            <button type="button" class="btn edit-btn">Edit</button>
+                        ` : `
+                            <button type="button" class="btn success approve-btn">✓ Approve</button>
+                            <button type="button" class="btn edit-btn">Edit</button>
+                        `}
+                        <button type="button" class="btn danger delete-btn">Delete</button>
+                    </div>
+                `;
+
+                div.querySelector('h4').textContent = item.name;
+                div.querySelector('.role-text').textContent = item.designation || '';
+                div.querySelector('.quote-preview').textContent = `"${item.review_text}"`;
+
+                const approveBtn = div.querySelector('.approve-btn');
+                if (approveBtn) approveBtn.addEventListener('click', () => updateReviewStatus(item.id, 'approved'));
+
+                const rejectBtn = div.querySelector('.reject-btn');
+                if (rejectBtn) rejectBtn.addEventListener('click', () => updateReviewStatus(item.id, 'rejected'));
+
+                const editBtn = div.querySelector('.edit-btn');
+                if (editBtn) editBtn.addEventListener('click', () => editReview(item));
+
+                const deleteBtn = div.querySelector('.delete-btn');
+                if (deleteBtn) deleteBtn.addEventListener('click', () => deleteReview(item.id));
+
+                list.appendChild(div);
+            });
+        } catch (err) {
+            console.error('Error loading reviews:', err);
+        }
+    };
+
+    // Filter tabs listener
+    document.querySelectorAll('.filter-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.filter-tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            loadReviews(btn.dataset.filter);
         });
+    });
+
+    window.updateReviewStatus = async (id, status) => {
+        try {
+            const res = await fetch(`/api/reviews/${id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status })
+            });
+            if (res.ok) {
+                showToast(`Review marked as ${status}!`);
+                loadReviews();
+            } else {
+                showToast('Failed to update status', true);
+            }
+        } catch (err) {
+            showToast('Error: ' + err.message, true);
+        }
+    };
+
+    window.editReview = (item) => {
+        document.getElementById('admin-review-id').value = item.id;
+        document.getElementById('admin-review-name').value = item.name || '';
+        document.getElementById('admin-review-designation').value = item.designation || '';
+        document.getElementById('admin-review-rating').value = item.rating || 5;
+        document.getElementById('admin-review-text').value = item.review_text || '';
+        document.getElementById('admin-review-status').value = item.status || 'approved';
         
-        showToast('Achievement saved');
-        document.getElementById('achievement-form-card').style.display = 'none';
-        loadAchievements();
-    });
+        document.getElementById('review-form-card').style.display = 'block';
+        document.getElementById('review-form-title').textContent = 'Edit Client Review';
+        document.getElementById('review-form-card').scrollIntoView({ behavior: 'smooth' });
+    };
 
-    // --- Testimonials ---
-    const loadTestimonials = async () => {
-        const res = await fetch('/api/testimonials');
-        const data = await res.json();
-        const list = document.getElementById('testimonials-list');
-        list.innerHTML = '';
-        data.forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'item-row';
-            div.innerHTML = `
-                <div class="item-info">
-                    <h4></h4>
-                    <p class="role-text" style="color: var(--accent); font-size: 0.85rem; margin-bottom: 0.25rem;"></p>
-                    <p class="quote-preview" style="color: var(--text-secondary); font-style: italic;"></p>
-                </div>
-                <div class="item-actions">
-                    <button type="button" class="btn edit-btn">Edit</button>
-                    <button type="button" class="btn danger delete-btn">Delete</button>
-                </div>
-            `;
-            div.querySelector('h4').textContent = item.client_name;
-            div.querySelector('.role-text').textContent = item.client_title || '';
-            div.querySelector('.quote-preview').textContent = `"${item.quote}"`;
-            div.querySelector('.edit-btn').addEventListener('click', () => editTestimonial(item.id, item.client_name, item.client_title, item.quote));
-            div.querySelector('.delete-btn').addEventListener('click', () => deleteTestimonial(item.id));
-            list.appendChild(div);
+    window.deleteReview = async (id) => {
+        if (!confirm('Are you sure you want to permanently delete this review?')) return;
+        try {
+            const res = await fetch(`/api/reviews/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                showToast('Review deleted successfully');
+                loadReviews();
+            } else {
+                showToast('Failed to delete review', true);
+            }
+        } catch (err) {
+            showToast('Error: ' + err.message, true);
+        }
+    };
+
+    const addReviewBtn = document.getElementById('add-review-btn');
+    if (addReviewBtn) {
+        addReviewBtn.addEventListener('click', () => {
+            document.getElementById('admin-review-form').reset();
+            document.getElementById('admin-review-id').value = '';
+            document.getElementById('admin-review-status').value = 'approved';
+            document.getElementById('review-form-card').style.display = 'block';
+            document.getElementById('review-form-title').textContent = 'Add Client Review';
+            document.getElementById('review-form-card').scrollIntoView({ behavior: 'smooth' });
         });
-    };
+    }
 
-    window.editTestimonial = (id, client_name, client_title, quote) => {
-        document.getElementById('testimonial-id').value = id;
-        document.getElementById('testimonial-client-name').value = client_name || '';
-        document.getElementById('testimonial-client-title').value = client_title || '';
-        document.getElementById('testimonial-quote').value = quote || '';
-        document.getElementById('testimonial-form-card').style.display = 'block';
-        document.getElementById('testimonial-form-title').textContent = 'Edit Testimonial';
-    };
-
-    window.deleteTestimonial = async (id) => {
-        if (!confirm('Are you sure you want to delete this testimonial?')) return;
-        await fetch(`/api/testimonials/${id}`, { method: 'DELETE' });
-        showToast('Testimonial deleted');
-        loadTestimonials();
-    };
-
-    document.getElementById('add-testimonial-btn').addEventListener('click', () => {
-        document.getElementById('testimonial-form').reset();
-        document.getElementById('testimonial-id').value = '';
-        document.getElementById('testimonial-form-card').style.display = 'block';
-        document.getElementById('testimonial-form-title').textContent = 'Add Testimonial';
-    });
-
-    document.getElementById('cancel-testimonial-btn').addEventListener('click', () => {
-        document.getElementById('testimonial-form-card').style.display = 'none';
-    });
-
-    document.getElementById('testimonial-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const id = document.getElementById('testimonial-id').value;
-        const client_name = document.getElementById('testimonial-client-name').value;
-        const client_title = document.getElementById('testimonial-client-title').value;
-        const quote = document.getElementById('testimonial-quote').value;
-
-        const url = id ? `/api/testimonials/${id}` : '/api/testimonials';
-        const method = id ? 'PUT' : 'POST';
-
-        await fetch(url, {
-            method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ client_name, client_title, quote })
+    const cancelAdminReviewBtn = document.getElementById('cancel-admin-review-btn');
+    if (cancelAdminReviewBtn) {
+        cancelAdminReviewBtn.addEventListener('click', () => {
+            document.getElementById('review-form-card').style.display = 'none';
         });
-        
-        showToast('Testimonial saved');
-        document.getElementById('testimonial-form-card').style.display = 'none';
-        loadTestimonials();
-    });
+    }
+
+    const adminReviewForm = document.getElementById('admin-review-form');
+    if (adminReviewForm) {
+        adminReviewForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('admin-review-id').value;
+            const name = document.getElementById('admin-review-name').value;
+            const designation = document.getElementById('admin-review-designation').value;
+            const rating = parseInt(document.getElementById('admin-review-rating').value) || 5;
+            const review_text = document.getElementById('admin-review-text').value;
+            const status = document.getElementById('admin-review-status').value;
+
+            try {
+                if (id) {
+                    // Update existing
+                    await fetch(`/api/reviews/${id}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ status })
+                    });
+                } else {
+                    // Create new
+                    await fetch('/api/reviews', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name, designation, rating, review_text })
+                    });
+                }
+                
+                showToast('Review saved successfully');
+                document.getElementById('review-form-card').style.display = 'none';
+                loadReviews();
+            } catch (err) {
+                showToast('Error saving review: ' + err.message, true);
+            }
+        });
+    }
 
     // --- Custom Content ---
     const loadCustomContent = async () => {
