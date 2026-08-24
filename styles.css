@@ -407,9 +407,27 @@ header {
     letter-spacing: 1px;
 }
 
+.project-card {
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.3s ease;
+}
+
+a.project-card:hover {
+    transform: translateY(-5px);
+}
+
+a.project-card:hover .arrow {
+    color: var(--red-accent);
+    transform: translate(3px, -3px);
+}
+
 .arrow {
     margin-left: auto;
     color: var(--grey-text);
+    transition: all 0.3s ease;
 }
 
 /* MIDDLE SECTION (Education, Process, Quote) */

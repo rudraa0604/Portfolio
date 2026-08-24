@@ -150,15 +150,15 @@ app.post('/api/profile', authenticateToken, (req, res) => {
 makeGetRoute('/api/projects', 'projects');
 makeDeleteRoute('/api/projects', 'projects');
 app.post('/api/projects', authenticateToken, (req, res) => {
-    const { title, category, image_url } = req.body;
-    db.run("INSERT INTO projects (title, category, image_url) VALUES (?, ?, ?)", [title, category, image_url], function(err) {
+    const { title, category, image_url, project_url } = req.body;
+    db.run("INSERT INTO projects (title, category, image_url, project_url) VALUES (?, ?, ?, ?)", [title, category, image_url, project_url || ''], function(err) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ id: this.lastID });
     });
 });
 app.put('/api/projects/:id', authenticateToken, (req, res) => {
-    const { title, category, image_url } = req.body;
-    db.run("UPDATE projects SET title = ?, category = ?, image_url = ? WHERE id = ?", [title, category, image_url, req.params.id], function(err) {
+    const { title, category, image_url, project_url } = req.body;
+    db.run("UPDATE projects SET title = ?, category = ?, image_url = ?, project_url = ? WHERE id = ?", [title, category, image_url, project_url || '', req.params.id], function(err) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ message: "Project updated successfully" });
     });

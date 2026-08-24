@@ -26,12 +26,16 @@ if (window.matchMedia("(hover: hover)").matches) {
     }
     animateCursor();
 
-    // Hover effect for links and buttons
-    const addHover = () => cursor.classList.add('hovering');
-    const removeHover = () => cursor.classList.remove('hovering');
+    // Hover effect for links, buttons, and clickable items using event delegation
+    document.addEventListener('mouseover', (e) => {
+        if (e.target.closest('a, button, .btn, .project-card, .contact-item, input, textarea, select')) {
+            cursor.classList.add('hovering');
+        }
+    });
 
-    document.querySelectorAll('a, button, .btn').forEach(el => {
-        el.addEventListener('mouseenter', addHover);
-        el.addEventListener('mouseleave', removeHover);
+    document.addEventListener('mouseout', (e) => {
+        if (e.target.closest('a, button, .btn, .project-card, .contact-item, input, textarea, select')) {
+            cursor.classList.remove('hovering');
+        }
     });
 }

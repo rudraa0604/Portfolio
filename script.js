@@ -312,15 +312,48 @@ document.addEventListener('DOMContentLoaded', () => {
             if(document.getElementById('quote-text')) document.getElementById('quote-text').innerText = data.quote_text || '';
             if(document.getElementById('quote-footer')) document.getElementById('quote-footer').innerHTML = data.quote_footer || '';
             
+            const isRealUrl = (url) => {
+                if (!url) return false;
+                const trimmed = url.trim().toLowerCase();
+                return trimmed && trimmed !== 'n/a' && trimmed !== 'na' && trimmed !== 'none' && trimmed !== '-' && trimmed !== 'null';
+            };
+
+            const formatUrl = (url) => {
+                if (!url) return '';
+                const trimmed = url.trim();
+                if (!trimmed) return '';
+                if (/^https?:\/\//i.test(trimmed)) return trimmed;
+                return `https://${trimmed}`;
+            };
+
             if(document.getElementById('footer-availability')) document.getElementById('footer-availability').innerText = `→ ${data.availability || ''}`;
-            if(document.getElementById('footer-email')) document.getElementById('footer-email').innerText = data.email || '';
-            if(document.getElementById('footer-website')) document.getElementById('footer-website').innerText = data.website || '';
-            if(document.getElementById('footer-phone')) document.getElementById('footer-phone').innerText = data.phone || '';
+            if(document.getElementById('footer-email')) document.getElementById('footer-email').innerHTML = `<a href="mailto:${data.email}" style="color: inherit; text-decoration: none;">${data.email || ''}</a>`;
+            if(document.getElementById('footer-website')) {
+                if (isRealUrl(data.website)) {
+                    const cleanDisplay = data.website.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
+                    document.getElementById('footer-website').innerHTML = `<a href="${formatUrl(data.website)}" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: none;">${cleanDisplay || data.website}</a>`;
+                } else {
+                    document.getElementById('footer-website').innerText = data.website || '';
+                }
+            }
+            if(document.getElementById('footer-phone') && data.phone) {
+                const cleanPhone = data.phone.replace(/[^0-9+]/g, '');
+                document.getElementById('footer-phone').innerHTML = `<a href="tel:${cleanPhone}" style="color: inherit; text-decoration: none;">${data.phone}</a>`;
+            }
             if(document.getElementById('footer-location')) document.getElementById('footer-location').innerText = data.location || '';
+            if(document.getElementById('footer-linkedin')) {
+                if (isRealUrl(data.linkedin)) {
+                    const cleanDisplay = data.linkedin.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
+                    document.getElementById('footer-linkedin').innerHTML = `<a href="${formatUrl(data.linkedin)}" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: none;">${cleanDisplay || data.linkedin}</a>`;
+                } else {
+                    document.getElementById('footer-linkedin').innerText = data.linkedin || '';
+                }
+            }
             
             if(data.whatsapp && document.getElementById('whatsapp-item')) {
                 document.getElementById('whatsapp-item').style.display = 'flex';
-                document.getElementById('footer-whatsapp').innerText = data.whatsapp;
+                const cleanWa = data.whatsapp.replace(/[^0-9]/g, '');
+                document.getElementById('footer-whatsapp').innerHTML = `<a href="https://wa.me/${cleanWa}" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: none;">${data.whatsapp}</a>`;
             }
 
             if(data.profile_photo && document.getElementById('hero-profile-photo')) {
@@ -414,6 +447,30 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } else {
             mediaHtml = `<div class="media-text">${p.title.split(' ')[0]}</div>`;
+        }
+
+        const formatUrl = (url) => {
+            if (!url) return '';
+            const trimmed = url.trim();
+            if (!trimmed) return '';
+            if (/^https?:\/\//i.test(trimmed)) return trimmed;
+            return `https://${trimmed}`;
+        };
+
+        if (p.project_url && p.project_url.trim()) {
+            const fullUrl = formatUrl(p.project_url);
+            return `
+                <a href="${fullUrl}" target="_blank" rel="noopener noreferrer" class="project-card" style="text-decoration: none; color: inherit; display: flex; flex-direction: column;">
+                    <div class="project-img">${mediaHtml}</div>
+                    <div class="project-info">
+                        <div class="project-num">${num}</div>
+                        <div>
+                            <h4>${p.title}</h4>
+                            <p>${p.category}</p>
+                        </div>
+                        <div class="arrow">↗</div>
+                    </div>
+                </a>`;
         }
         return `
             <div class="project-card">

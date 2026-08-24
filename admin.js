@@ -555,17 +555,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `;
             div.querySelector('h4').textContent = item.title;
-            div.querySelector('p').textContent = item.category;
-            div.querySelector('.edit-btn').addEventListener('click', () => editProject(item.id, item.title, item.category, item.image_url));
+            div.querySelector('p').textContent = item.project_url ? `${item.category} • 🔗 ${item.project_url}` : item.category;
+            div.querySelector('.edit-btn').addEventListener('click', () => editProject(item.id, item.title, item.category, item.image_url, item.project_url));
             div.querySelector('.delete-btn').addEventListener('click', () => deleteProject(item.id));
             list.appendChild(div);
         });
     };
 
-    window.editProject = (id, title, category, imageUrl) => {
+    window.editProject = (id, title, category, imageUrl, projectUrl) => {
         document.getElementById('project-id').value = id;
         document.getElementById('project-title').value = title;
         document.getElementById('project-category').value = category;
+        document.getElementById('project-url').value = projectUrl || '';
         document.getElementById('project-image-url').value = imageUrl;
         if (imageUrl && imageUrl.match(/\.(jpeg|jpg|gif|png|webp)$/i)) {
             document.getElementById('project-image-preview').src = imageUrl;
@@ -587,6 +588,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('add-project-btn').addEventListener('click', () => {
         document.getElementById('project-form').reset();
         document.getElementById('project-id').value = '';
+        document.getElementById('project-url').value = '';
         document.getElementById('project-image-url').value = '';
         document.getElementById('project-image-preview').style.display = 'none';
         document.getElementById('project-image-label').textContent = 'Choose project thumbnail...';
@@ -603,6 +605,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const id = document.getElementById('project-id').value;
         const title = document.getElementById('project-title').value;
         const category = document.getElementById('project-category').value;
+        const project_url = document.getElementById('project-url').value;
         const fileInput = document.getElementById('project-image-upload');
         let image_url = document.getElementById('project-image-url').value;
 
@@ -617,7 +620,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title, category, image_url })
+                body: JSON.stringify({ title, category, image_url, project_url })
             });
             
             showToast('Project saved');

@@ -77,8 +77,10 @@ db.serialize(() => {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT,
         category TEXT,
-        image_url TEXT
+        image_url TEXT,
+        project_url TEXT
     )`);
+    db.run(`ALTER TABLE projects ADD COLUMN project_url TEXT`, (err) => {});
 
     // 3. Skills/Services Table
     db.run(`CREATE TABLE IF NOT EXISTS skills (

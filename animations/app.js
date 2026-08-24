@@ -29,6 +29,75 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- Navigation & Mobile Menu ---
+    const hamburger = document.getElementById('hamburger');
+    const navLinksMenu = document.getElementById('nav-links');
+    const navLinks = document.querySelectorAll('.nav-link');
+    const sections = document.querySelectorAll('section, footer');
+
+    if (hamburger && navLinksMenu) {
+        hamburger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            hamburger.classList.toggle('active');
+            navLinksMenu.classList.toggle('active');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (navLinksMenu.classList.contains('active') && !e.target.closest('#main-nav')) {
+                hamburger.classList.remove('active');
+                navLinksMenu.classList.remove('active');
+            }
+        });
+    }
+
+    // Handle all internal anchor clicks (#home, #portfolio, #services, etc.) smoothly
+    document.addEventListener('click', (e) => {
+        const anchor = e.target.closest('a[href^="#"]');
+        if (!anchor) return;
+        const targetHref = anchor.getAttribute('href');
+        if (!targetHref || targetHref === '#' || targetHref.length < 2) return;
+        
+        try {
+            const targetElement = document.querySelector(targetHref);
+            if (targetElement) {
+                e.preventDefault();
+                if (window.lenis) {
+                    window.lenis.scrollTo(targetElement, { offset: -70, duration: 1.2 });
+                } else {
+                    const offsetTop = targetElement.getBoundingClientRect().top + window.pageYOffset - 70;
+                    window.scrollTo({ top: offsetTop, behavior: 'smooth' });
+                }
+                if (hamburger && navLinksMenu) {
+                    hamburger.classList.remove('active');
+                    navLinksMenu.classList.remove('active');
+                }
+            }
+        } catch (err) {
+            // Ignore invalid selector
+        }
+    });
+
+    // Active Section Observer
+    if ('IntersectionObserver' in window) {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.getAttribute('id');
+                    navLinks.forEach(link => {
+                        link.classList.remove('active');
+                        if (link.getAttribute('href') === `#${id}`) {
+                            link.classList.add('active');
+                        }
+                    });
+                }
+            });
+        }, { root: null, rootMargin: '-20% 0px -60% 0px', threshold: 0 });
+
+        sections.forEach(sec => {
+            if (sec.id) observer.observe(sec);
+        });
+    }
+
     // 1. Fetch Data
     Promise.all([
         fetch('/api/profile').then(r => r.json()),
@@ -197,13 +266,53 @@ document.addEventListener('DOMContentLoaded', () => {
             if (document.getElementById('quote-footer')) {
                 document.getElementById('quote-footer').innerHTML = profile.quote_footer || '';
             }
-            document.getElementById('footer-availability').innerText = `→ ${profile.availability}`;
-            document.getElementById('footer-email').innerHTML = `<a href="mailto:${profile.email}" style="color: inherit; text-decoration: none;">${profile.email}</a>`;
-            document.getElementById('footer-website').innerText = profile.website;
-            document.getElementById('footer-phone').innerText = profile.phone;
-            document.getElementById('footer-location').innerText = profile.location;
-            if (profile.linkedin) {
-                document.getElementById('footer-linkedin').innerHTML = `<a href="${profile.linkedin}" target="_blank" style="color: inherit; text-decoration: none;">${profile.linkedin.replace(/^https?:\/\/(www\.)?/, '')}</a>`;
+            const isRealUrl = (url) => {
+                if (!url) return false;
+                const trimmed = url.trim().toLowerCase();
+                return trimmed && trimmed !== 'n/a' && trimmed !== 'na' && trimmed !== 'none' && trimmed !== '-' && trimmed !== 'null';
+            };
+
+            const formatUrl = (url) => {
+                if (!url) return '';
+                const trimmed = url.trim();
+                if (!trimmed) return '';
+                if (/^https?:\/\//i.test(trimmed)) {
+                    return trimmed;
+                }
+                return `https://${trimmed}`;
+            };
+
+            document.getElementById('footer-availability').innerText = `→ ${profile.availability || ''}`;
+            if (profile.email && document.getElementById('footer-email')) {
+                document.getElementById('footer-email').innerHTML = `<a href="mailto:${profile.email}" style="color: inherit; text-decoration: none;">${profile.email}</a>`;
+            }
+            if (document.getElementById('footer-website')) {
+                if (isRealUrl(profile.website)) {
+                    const cleanDisplay = profile.website.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
+                    document.getElementById('footer-website').innerHTML = `<a href="${formatUrl(profile.website)}" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: none;">${cleanDisplay || profile.website}</a>`;
+                } else {
+                    document.getElementById('footer-website').innerText = profile.website || '';
+                }
+            }
+            if (profile.phone && document.getElementById('footer-phone')) {
+                const cleanPhone = profile.phone.replace(/[^0-9+]/g, '');
+                document.getElementById('footer-phone').innerHTML = `<a href="tel:${cleanPhone}" style="color: inherit; text-decoration: none;">${profile.phone}</a>`;
+            }
+            if (profile.location && document.getElementById('footer-location')) {
+                document.getElementById('footer-location').innerText = profile.location;
+            }
+            if (document.getElementById('footer-linkedin')) {
+                if (isRealUrl(profile.linkedin)) {
+                    const cleanDisplay = profile.linkedin.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
+                    document.getElementById('footer-linkedin').innerHTML = `<a href="${formatUrl(profile.linkedin)}" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: none;">${cleanDisplay || profile.linkedin}</a>`;
+                } else {
+                    document.getElementById('footer-linkedin').innerText = profile.linkedin || '';
+                }
+            }
+            if (profile.whatsapp && document.getElementById('whatsapp-item')) {
+                document.getElementById('whatsapp-item').style.display = 'flex';
+                const cleanWa = profile.whatsapp.replace(/[^0-9]/g, '');
+                document.getElementById('footer-whatsapp').innerHTML = `<a href="https://wa.me/${cleanWa}" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: none;">${profile.whatsapp}</a>`;
             }
             
             if(profile.profile_photo && document.getElementById('hero-profile-photo')) {
@@ -239,20 +348,47 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const projectGrid = document.getElementById('project-grid');
-        projects.forEach((p, idx) => {
-            const num = (idx + 1).toString().padStart(2, '0');
-            const isVideo = p.image_url && p.image_url.match(/\.(mp4|webm|ogg)$/i);
-            let mediaHtml = p.image_url ? 
-                (isVideo ? `<video src="${p.image_url}" autoplay loop muted playsinline class="media-fill"></video>` : `<img src="${p.image_url}" class="media-fill" alt="${p.title}">`) 
-                : `<div class="media-text">${p.title.split(' ')[0]}</div>`;
-            projectGrid.innerHTML += `
-                <div class="project-card">
-                    <div class="project-img">${mediaHtml}</div>
-                    <div class="project-info">
-                        <div class="project-num">${num}</div><div><h4>${p.title}</h4><p>${p.category}</p></div><div class="arrow">→</div>
-                    </div>
-                </div>`;
-        });
+        if (projectGrid) {
+            projectGrid.innerHTML = '';
+            projects.forEach((p, idx) => {
+                const num = (idx + 1).toString().padStart(2, '0');
+                const isVideo = p.image_url && p.image_url.match(/\.(mp4|webm|ogg)$/i);
+                let mediaHtml = p.image_url ? 
+                    (isVideo ? `<video src="${p.image_url}" autoplay loop muted playsinline class="media-fill"></video>` : `<img src="${p.image_url}" class="media-fill" alt="${p.title}">`) 
+                    : `<div class="media-text">${p.title.split(' ')[0]}</div>`;
+                
+                const formatUrl = (url) => {
+                    if (!url) return '';
+                    const trimmed = url.trim();
+                    if (!trimmed) return '';
+                    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+                    return `https://${trimmed}`;
+                };
+
+                if (p.project_url && p.project_url.trim()) {
+                    const fullUrl = formatUrl(p.project_url);
+                    projectGrid.innerHTML += `
+                        <a href="${fullUrl}" target="_blank" rel="noopener noreferrer" class="project-card" style="text-decoration: none; color: inherit; display: flex; flex-direction: column;">
+                            <div class="project-img">${mediaHtml}</div>
+                            <div class="project-info">
+                                <div class="project-num">${num}</div>
+                                <div><h4>${p.title}</h4><p>${p.category}</p></div>
+                                <div class="arrow">↗</div>
+                            </div>
+                        </a>`;
+                } else {
+                    projectGrid.innerHTML += `
+                        <div class="project-card">
+                            <div class="project-img">${mediaHtml}</div>
+                            <div class="project-info">
+                                <div class="project-num">${num}</div>
+                                <div><h4>${p.title}</h4><p>${p.category}</p></div>
+                                <div class="arrow">→</div>
+                            </div>
+                        </div>`;
+                }
+            });
+        }
 
         const statList = document.getElementById('hero-stats');
         stats.forEach(s => statList.innerHTML += `<div class="stat"><h3>${s.value}</h3><p>${s.description}</p></div>`);
