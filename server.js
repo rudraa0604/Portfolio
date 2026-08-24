@@ -5,13 +5,13 @@ const cookieParser = require('cookie-parser');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
-const db = require('./database');
 const path = require('path');
 const fs = require('fs');
+const { connectMongo, ObjectId } = require('./mongoDatabase');
 
 const app = express();
-const PORT = 3000;
-const JWT_SECRET = 'super-secret-key-for-portfolio-admin'; // In production, this should be in .env
+const PORT = process.env.PORT || 3000;
+const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-for-portfolio-admin';
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -30,18 +30,43 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Configure Multer for File Uploads
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
+        if (!fs.existsSync('uploads/')) {
+            fs.mkdirSync('uploads/', { recursive: true });
+        }
         cb(null, 'uploads/');
     },
     filename: function (req, file, cb) {
-        cb(null, Date.now() + '-' + file.originalname);
+        cb(null, Date.now() + '-' + file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_'));
     }
 });
 const upload = multer({ storage: storage });
 
-// Admin route
-app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, 'admin.html'));
-});
+// Helpers
+function parseIdQuery(id) {
+    if (!id) return {};
+    const queries = [];
+    if (ObjectId.isValid(id)) {
+        queries.push({ _id: new ObjectId(id) });
+    }
+    const num = Number(id);
+    if (!isNaN(num)) {
+        queries.push({ id: num });
+    }
+    queries.push({ id: String(id) });
+    return queries.length === 1 ? queries[0] : { $or: queries };
+}
+
+function formatDoc(doc) {
+    if (!doc) return null;
+    return {
+        ...doc,
+        id: doc.id !== undefined ? doc.id : (doc._id ? doc._id.toString() : undefined)
+    };
+}
+
+function formatDocs(docs) {
+    return (docs || []).map(formatDoc);
+}
 
 // Authentication Middleware
 const authenticateToken = (req, res, next) => {
@@ -55,24 +80,30 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
+// Admin route
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'admin.html'));
+});
+
 // Login Route
-app.post('/api/login', (req, res) => {
+app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
-    db.get("SELECT * FROM admin_users WHERE username = ?", [username], (err, user) => {
-        if (err) return res.status(500).json({ error: err.message });
+    try {
+        const db = await connectMongo();
+        const user = await db.collection('admin_users').findOne({ username });
         if (!user) return res.status(400).json({ error: 'Invalid username or password' });
 
-        bcrypt.compare(password, user.password_hash, (err, isMatch) => {
-            if (err) return res.status(500).json({ error: err.message });
-            if (isMatch) {
-                const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: '1d' });
-                res.cookie('admin_token', token, { httpOnly: true });
-                res.json({ message: 'Logged in successfully' });
-            } else {
-                res.status(400).json({ error: 'Invalid username or password' });
-            }
-        });
-    });
+        const isMatch = await bcrypt.compare(password, user.password_hash);
+        if (isMatch) {
+            const token = jwt.sign({ id: user._id || user.id, username: user.username }, JWT_SECRET, { expiresIn: '1d' });
+            res.cookie('admin_token', token, { httpOnly: true });
+            res.json({ message: 'Logged in successfully' });
+        } else {
+            res.status(400).json({ error: 'Invalid username or password' });
+        }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Auth Check Route
@@ -94,51 +125,41 @@ app.post('/api/upload', authenticateToken, upload.any(), (req, res) => {
     res.json({ imageUrl: fileUrl, fileUrl: fileUrl });
 });
 
-// Generic helper for GET routes
-const makeGetRoute = (path, table) => {
-    app.get(path, (req, res) => {
-        db.all(`SELECT * FROM ${table}`, (err, rows) => {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json(rows);
-        });
-    });
-};
-// Generic helper for DELETE routes (Protected)
-const makeDeleteRoute = (path, table) => {
-    app.delete(`${path}/:id`, authenticateToken, (req, res) => {
-        db.run(`DELETE FROM ${table} WHERE id = ?`, req.params.id, function(err) {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json({ deleted: this.changes });
-        });
-    });
-};
-
 // Settings (Theme)
-app.get('/api/settings', (req, res) => {
-    db.get("SELECT * FROM settings ORDER BY id DESC LIMIT 1", (err, row) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(row);
-    });
+app.get('/api/settings', async (req, res) => {
+    try {
+        const db = await connectMongo();
+        const row = await db.collection('settings').findOne({});
+        res.json(formatDoc(row) || { theme_name: 'Default Dark' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
-app.post('/api/settings', authenticateToken, (req, res) => {
-    db.run("UPDATE settings SET theme_name = ? WHERE id = (SELECT id FROM settings ORDER BY id DESC LIMIT 1)", [req.body.theme_name], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
+app.post('/api/settings', authenticateToken, async (req, res) => {
+    try {
+        const db = await connectMongo();
+        await db.collection('settings').updateOne({}, { $set: { theme_name: req.body.theme_name } }, { upsert: true });
         res.json({ message: "Theme updated successfully" });
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Profile endpoints
-app.get('/api/profile', (req, res) => {
-    db.get("SELECT * FROM profile ORDER BY id DESC LIMIT 1", (err, row) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(row);
-    });
+app.get('/api/profile', async (req, res) => {
+    try {
+        const db = await connectMongo();
+        const row = await db.collection('profile').findOne({});
+        res.json(formatDoc(row) || {});
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
-app.post('/api/profile', authenticateToken, (req, res) => {
-    db.get("SELECT * FROM profile ORDER BY id DESC LIMIT 1", (err, current) => {
-        if (err) return res.status(500).json({ error: err.message });
-        
-        const c = current || {};
+
+app.post('/api/profile', authenticateToken, async (req, res) => {
+    try {
+        const db = await connectMongo();
+        const c = (await db.collection('profile').findOne({})) || {};
         const b = req.body || {};
 
         const updated = {
@@ -164,161 +185,273 @@ app.post('/api/profile', authenticateToken, (req, res) => {
             resume_url: b.resume_url !== undefined ? b.resume_url : (c.resume_url || '')
         };
 
-        if (c.id) {
-            db.run(
-                `UPDATE profile SET name = ?, title = ?, description = ?, email = ?, phone = ?, website = ?, location = ?, availability = ?, account_id = ?, quote_text = ?, quote_footer = ?, background_url = ?, whatsapp = ?, linkedin = ?, instagram = ?, github = ?, profile_photo = ?, footer_topic = ?, footer_desc = ?, resume_url = ? WHERE id = ?`,
-                [
-                    updated.name, updated.title, updated.description, updated.email, updated.phone,
-                    updated.website, updated.location, updated.availability, updated.account_id,
-                    updated.quote_text, updated.quote_footer, updated.background_url, updated.whatsapp,
-                    updated.linkedin, updated.instagram, updated.github, updated.profile_photo,
-                    updated.footer_topic, updated.footer_desc, updated.resume_url,
-                    c.id
-                ],
-                function(updateErr) {
-                    if (updateErr) return res.status(500).json({ error: updateErr.message });
-                    res.json({ message: "Profile updated successfully", profile: updated });
-                }
-            );
-        } else {
-            db.run(
-                `INSERT INTO profile (name, title, description, email, phone, website, location, availability, account_id, quote_text, quote_footer, background_url, whatsapp, linkedin, instagram, github, profile_photo, footer_topic, footer_desc, resume_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [
-                    updated.name, updated.title, updated.description, updated.email, updated.phone,
-                    updated.website, updated.location, updated.availability, updated.account_id,
-                    updated.quote_text, updated.quote_footer, updated.background_url, updated.whatsapp,
-                    updated.linkedin, updated.instagram, updated.github, updated.profile_photo,
-                    updated.footer_topic, updated.footer_desc, updated.resume_url
-                ],
-                function(insertErr) {
-                    if (insertErr) return res.status(500).json({ error: insertErr.message });
-                    res.json({ message: "Profile created successfully", id: this.lastID, profile: updated });
-                }
-            );
-        }
-    });
-});
-
-// Projects endpoints
-makeGetRoute('/api/projects', 'projects');
-makeDeleteRoute('/api/projects', 'projects');
-app.post('/api/projects', authenticateToken, (req, res) => {
-    const { title, category, image_url, project_url } = req.body;
-    db.run("INSERT INTO projects (title, category, image_url, project_url) VALUES (?, ?, ?, ?)", [title, category, image_url, project_url || ''], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ id: this.lastID });
-    });
-});
-app.put('/api/projects/:id', authenticateToken, (req, res) => {
-    const { title, category, image_url, project_url } = req.body;
-    db.run("UPDATE projects SET title = ?, category = ?, image_url = ?, project_url = ? WHERE id = ?", [title, category, image_url, project_url || '', req.params.id], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: "Project updated successfully" });
-    });
-});
-
-// Skills/Services endpoints
-makeGetRoute('/api/skills', 'skills');
-makeDeleteRoute('/api/skills', 'skills');
-app.post('/api/skills', authenticateToken, (req, res) => {
-    db.run("INSERT INTO skills (name, price) VALUES (?, ?)", [req.body.name, req.body.price], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ id: this.lastID });
-    });
-});
-app.put('/api/skills/:id', authenticateToken, (req, res) => {
-    db.run("UPDATE skills SET name = ?, price = ? WHERE id = ?", [req.body.name, req.body.price, req.params.id], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: "Skill/Service updated successfully" });
-    });
-});
-
-// Education endpoints
-makeGetRoute('/api/education', 'education');
-makeDeleteRoute('/api/education', 'education');
-app.post('/api/education', authenticateToken, (req, res) => {
-    db.run("INSERT INTO education (degree, institution, year) VALUES (?, ?, ?)", [req.body.degree, req.body.institution, req.body.year], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ id: this.lastID });
-    });
-});
-app.put('/api/education/:id', authenticateToken, (req, res) => {
-    db.run("UPDATE education SET degree = ?, institution = ?, year = ? WHERE id = ?", [req.body.degree, req.body.institution, req.body.year, req.params.id], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: "Education updated successfully" });
-    });
-});
-
-
-// Certifications (Awards and Achievements) endpoints
-makeGetRoute('/api/certifications', 'certifications');
-makeDeleteRoute('/api/certifications', 'certifications');
-app.post('/api/certifications', authenticateToken, (req, res) => {
-    db.run("INSERT INTO certifications (name, issuer, image_url) VALUES (?, ?, ?)", [req.body.name, req.body.issuer, req.body.image_url || ''], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ id: this.lastID });
-    });
-});
-app.put('/api/certifications/:id', authenticateToken, (req, res) => {
-    db.run("UPDATE certifications SET name = ?, issuer = ?, image_url = ? WHERE id = ?", [req.body.name, req.body.issuer, req.body.image_url || '', req.params.id], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: "Certification updated successfully" });
-    });
-});
-
-// Stats endpoints
-makeGetRoute('/api/stats', 'stats');
-makeDeleteRoute('/api/stats', 'stats');
-app.post('/api/stats', authenticateToken, (req, res) => {
-    db.run("INSERT INTO stats (value, description) VALUES (?, ?)", [req.body.value, req.body.description], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ id: this.lastID });
-    });
-});
-
-// Testimonials endpoints (Legacy support)
-makeGetRoute('/api/testimonials', 'testimonials');
-makeDeleteRoute('/api/testimonials', 'testimonials');
-app.post('/api/testimonials', authenticateToken, (req, res) => {
-    db.run("INSERT INTO testimonials (quote, client_name, client_title) VALUES (?, ?, ?)", [req.body.quote, req.body.client_name, req.body.client_title], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ id: this.lastID });
-    });
-});
-app.put('/api/testimonials/:id', authenticateToken, (req, res) => {
-    db.run("UPDATE testimonials SET quote = ?, client_name = ?, client_title = ? WHERE id = ?", [req.body.quote, req.body.client_name, req.body.client_title, req.params.id], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: "Testimonial updated successfully" });
-    });
-});
-
-// Reviews Endpoints (with Approval Workflow & Ratings)
-app.get('/api/reviews', (req, res) => {
-    const { status } = req.query;
-    if (status === 'approved') {
-        // Public endpoint for homepage to fetch approved reviews
-        db.all("SELECT * FROM reviews WHERE status = 'approved' ORDER BY id DESC", (err, rows) => {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json(rows);
-        });
-    } else {
-        // Protected admin endpoint for all/filtered reviews
-        authenticateToken(req, res, () => {
-            let query = "SELECT * FROM reviews ORDER BY CASE WHEN status = 'pending' THEN 0 ELSE 1 END, id DESC";
-            let params = [];
-            if (status) {
-                query = "SELECT * FROM reviews WHERE status = ? ORDER BY id DESC";
-                params = [status];
-            }
-            db.all(query, params, (err, rows) => {
-                if (err) return res.status(500).json({ error: err.message });
-                res.json(rows);
-            });
-        });
+        await db.collection('profile').updateOne({}, { $set: updated }, { upsert: true });
+        res.json({ message: "Profile updated successfully", profile: updated });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
-app.post('/api/reviews', (req, res) => {
+// Projects endpoints
+app.get('/api/projects', async (req, res) => {
+    try {
+        const db = await connectMongo();
+        const rows = await db.collection('projects').find({}).toArray();
+        res.json(formatDocs(rows));
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/projects', authenticateToken, async (req, res) => {
+    try {
+        const db = await connectMongo();
+        const { title, category, image_url, live_link } = req.body;
+        const result = await db.collection('projects').insertOne({ title, category, image_url, live_link });
+        res.json({ id: result.insertedId.toString() });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/projects/:id', authenticateToken, async (req, res) => {
+    try {
+        const db = await connectMongo();
+        const { title, category, image_url, live_link } = req.body;
+        await db.collection('projects').updateOne(parseIdQuery(req.params.id), { $set: { title, category, image_url, live_link } });
+        res.json({ message: "Project updated successfully" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/projects/:id', authenticateToken, async (req, res) => {
+    try {
+        const db = await connectMongo();
+        await db.collection('projects').deleteOne(parseIdQuery(req.params.id));
+        res.json({ message: "Project deleted successfully" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Skills endpoints
+app.get('/api/skills', async (req, res) => {
+    try {
+        const db = await connectMongo();
+        const rows = await db.collection('skills').find({}).toArray();
+        res.json(formatDocs(rows));
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/skills', authenticateToken, async (req, res) => {
+    try {
+        const db = await connectMongo();
+        const result = await db.collection('skills').insertOne({ name: req.body.name, price: req.body.price });
+        res.json({ id: result.insertedId.toString() });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/skills/:id', authenticateToken, async (req, res) => {
+    try {
+        const db = await connectMongo();
+        await db.collection('skills').updateOne(parseIdQuery(req.params.id), { $set: { name: req.body.name, price: req.body.price } });
+        res.json({ message: "Skill updated successfully" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/skills/:id', authenticateToken, async (req, res) => {
+    try {
+        const db = await connectMongo();
+        await db.collection('skills').deleteOne(parseIdQuery(req.params.id));
+        res.json({ message: "Skill deleted successfully" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Education endpoints
+app.get('/api/education', async (req, res) => {
+    try {
+        const db = await connectMongo();
+        const rows = await db.collection('education').find({}).toArray();
+        res.json(formatDocs(rows));
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/education', authenticateToken, async (req, res) => {
+    try {
+        const db = await connectMongo();
+        const result = await db.collection('education').insertOne({ degree: req.body.degree, institution: req.body.institution, year: req.body.year });
+        res.json({ id: result.insertedId.toString() });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/education/:id', authenticateToken, async (req, res) => {
+    try {
+        const db = await connectMongo();
+        await db.collection('education').updateOne(parseIdQuery(req.params.id), { $set: { degree: req.body.degree, institution: req.body.institution, year: req.body.year } });
+        res.json({ message: "Education updated successfully" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/education/:id', authenticateToken, async (req, res) => {
+    try {
+        const db = await connectMongo();
+        await db.collection('education').deleteOne(parseIdQuery(req.params.id));
+        res.json({ message: "Education deleted successfully" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Certifications endpoints
+app.get('/api/certifications', async (req, res) => {
+    try {
+        const db = await connectMongo();
+        const rows = await db.collection('certifications').find({}).toArray();
+        res.json(formatDocs(rows));
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/certifications', authenticateToken, async (req, res) => {
+    try {
+        const db = await connectMongo();
+        const result = await db.collection('certifications').insertOne({ name: req.body.name, issuer: req.body.issuer, image_url: req.body.image_url || '' });
+        res.json({ id: result.insertedId.toString() });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/certifications/:id', authenticateToken, async (req, res) => {
+    try {
+        const db = await connectMongo();
+        await db.collection('certifications').updateOne(parseIdQuery(req.params.id), { $set: { name: req.body.name, issuer: req.body.issuer, image_url: req.body.image_url || '' } });
+        res.json({ message: "Certification updated successfully" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/certifications/:id', authenticateToken, async (req, res) => {
+    try {
+        const db = await connectMongo();
+        await db.collection('certifications').deleteOne(parseIdQuery(req.params.id));
+        res.json({ message: "Certification deleted successfully" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Stats endpoints
+app.get('/api/stats', async (req, res) => {
+    try {
+        const db = await connectMongo();
+        const rows = await db.collection('stats').find({}).toArray();
+        res.json(formatDocs(rows));
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/stats', authenticateToken, async (req, res) => {
+    try {
+        const db = await connectMongo();
+        const result = await db.collection('stats').insertOne({ value: req.body.value, description: req.body.description });
+        res.json({ id: result.insertedId.toString() });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/stats/:id', authenticateToken, async (req, res) => {
+    try {
+        const db = await connectMongo();
+        await db.collection('stats').deleteOne(parseIdQuery(req.params.id));
+        res.json({ message: "Stat deleted successfully" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Testimonials endpoints (Legacy)
+app.get('/api/testimonials', async (req, res) => {
+    try {
+        const db = await connectMongo();
+        const rows = await db.collection('testimonials').find({}).toArray();
+        res.json(formatDocs(rows));
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/testimonials', authenticateToken, async (req, res) => {
+    try {
+        const db = await connectMongo();
+        const result = await db.collection('testimonials').insertOne({ quote: req.body.quote, client_name: req.body.client_name, client_title: req.body.client_title });
+        res.json({ id: result.insertedId.toString() });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/testimonials/:id', authenticateToken, async (req, res) => {
+    try {
+        const db = await connectMongo();
+        await db.collection('testimonials').updateOne(parseIdQuery(req.params.id), { $set: { quote: req.body.quote, client_name: req.body.client_name, client_title: req.body.client_title } });
+        res.json({ message: "Testimonial updated successfully" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/testimonials/:id', authenticateToken, async (req, res) => {
+    try {
+        const db = await connectMongo();
+        await db.collection('testimonials').deleteOne(parseIdQuery(req.params.id));
+        res.json({ message: "Testimonial deleted successfully" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Reviews Endpoints (with Approval Workflow & Ratings)
+app.get('/api/reviews', async (req, res) => {
+    const { status } = req.query;
+    try {
+        const db = await connectMongo();
+        if (status === 'approved') {
+            const rows = await db.collection('reviews').find({ status: 'approved' }).sort({ _id: -1 }).toArray();
+            return res.json(formatDocs(rows));
+        } else {
+            authenticateToken(req, res, async () => {
+                let filter = {};
+                if (status) filter = { status };
+                const rows = await db.collection('reviews').find(filter).sort({ _id: -1 }).toArray();
+                res.json(formatDocs(rows));
+            });
+        }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/reviews', async (req, res) => {
     const { name, designation, review_text, rating } = req.body;
     if (!name || !designation || !review_text) {
         return res.status(400).json({ error: "Name, designation, and review text are required." });
@@ -328,53 +461,105 @@ app.post('/api/reviews', (req, res) => {
     const cleanText = String(review_text).trim().slice(0, 500);
     const numRating = Math.max(1, Math.min(5, parseInt(rating) || 5));
 
-    db.run(
-        "INSERT INTO reviews (name, designation, review_text, rating, status) VALUES (?, ?, ?, ?, 'pending')",
-        [cleanName, cleanDesig, cleanText, numRating],
-        function(err) {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json({ 
-                message: "Thanks! Your review will appear after approval.", 
-                id: this.lastID 
-            });
-        }
-    );
+    try {
+        const db = await connectMongo();
+        const result = await db.collection('reviews').insertOne({
+            name: cleanName,
+            designation: cleanDesig,
+            review_text: cleanText,
+            rating: numRating,
+            status: 'pending',
+            created_at: new Date()
+        });
+        res.json({ 
+            message: "Thanks! Your review will appear after approval.", 
+            id: result.insertedId.toString() 
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-app.patch('/api/reviews/:id', authenticateToken, (req, res) => {
+app.patch('/api/reviews/:id', authenticateToken, async (req, res) => {
     const { status } = req.body;
     if (!['pending', 'approved', 'rejected'].includes(status)) {
         return res.status(400).json({ error: "Invalid status. Must be pending, approved, or rejected." });
     }
-    db.run("UPDATE reviews SET status = ? WHERE id = ?", [status, req.params.id], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
+    try {
+        const db = await connectMongo();
+        await db.collection('reviews').updateOne(parseIdQuery(req.params.id), { $set: { status } });
         res.json({ message: `Review ${status} successfully` });
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-app.delete('/api/reviews/:id', authenticateToken, (req, res) => {
-    db.run("DELETE FROM reviews WHERE id = ?", [req.params.id], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
+app.delete('/api/reviews/:id', authenticateToken, async (req, res) => {
+    try {
+        const db = await connectMongo();
+        await db.collection('reviews').deleteOne(parseIdQuery(req.params.id));
         res.json({ message: "Review deleted successfully" });
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Custom Content endpoints
-makeGetRoute('/api/custom_content', 'custom_content');
-makeDeleteRoute('/api/custom_content', 'custom_content');
-app.post('/api/custom_content', authenticateToken, (req, res) => {
-    db.run("INSERT INTO custom_content (title, content, section_placement) VALUES (?, ?, ?)", [req.body.title, req.body.content, req.body.section_placement], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ id: this.lastID });
-    });
-});
-app.put('/api/custom_content/:id', authenticateToken, (req, res) => {
-    db.run("UPDATE custom_content SET title = ?, content = ?, section_placement = ? WHERE id = ?", [req.body.title, req.body.content, req.body.section_placement, req.params.id], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ message: "Custom content updated successfully" });
-    });
+app.get('/api/custom_content', async (req, res) => {
+    try {
+        const db = await connectMongo();
+        const rows = await db.collection('custom_content').find({}).toArray();
+        res.json(formatDocs(rows));
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+app.post('/api/custom_content', authenticateToken, async (req, res) => {
+    try {
+        const db = await connectMongo();
+        const result = await db.collection('custom_content').insertOne({
+            title: req.body.title,
+            content: req.body.content,
+            section_placement: req.body.section_placement
+        });
+        res.json({ id: result.insertedId.toString() });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/custom_content/:id', authenticateToken, async (req, res) => {
+    try {
+        const db = await connectMongo();
+        await db.collection('custom_content').updateOne(parseIdQuery(req.params.id), {
+            $set: {
+                title: req.body.title,
+                content: req.body.content,
+                section_placement: req.body.section_placement
+            }
+        });
+        res.json({ message: "Custom content updated successfully" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/custom_content/:id', authenticateToken, async (req, res) => {
+    try {
+        const db = await connectMongo();
+        await db.collection('custom_content').deleteOne(parseIdQuery(req.params.id));
+        res.json({ message: "Custom content deleted successfully" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Start Server after connecting to MongoDB Atlas
+connectMongo().then(() => {
+    app.listen(PORT, () => {
+        console.log(`Server running on http://localhost:${PORT}`);
+    });
+}).catch(err => {
+    console.error("Failed to start server due to MongoDB error:", err.message);
 });
