@@ -261,11 +261,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             document.getElementById('main-desc').innerText = profile.description;
             document.getElementById('main-availability').innerText = profile.availability;
-            document.getElementById('signature-name').innerText = nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase();
+            document.getElementById('signature-name').innerText = profile.quote_footer || (nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase());
             document.getElementById('quote-text').innerText = profile.quote_text || '';
-            if (document.getElementById('quote-footer')) {
-                document.getElementById('quote-footer').innerHTML = profile.quote_footer || '';
-            }
             const isRealUrl = (url) => {
                 if (!url) return false;
                 const trimmed = url.trim().toLowerCase();
