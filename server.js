@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { GridFSBucket } = require('mongodb');
 const { connectMongo, ObjectId } = require('./mongoDatabase');
 
 const app = express();
@@ -25,7 +26,42 @@ app.use(express.static(path.join(__dirname), {
         }
     }
 }));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// GridFS & Disk Hybrid Handler for /uploads/ (Never loses photos on Render redeploys!)
+app.get('/uploads/:filename', async (req, res) => {
+    const filename = req.params.filename;
+    const localPath = path.join(__dirname, 'uploads', filename);
+
+    if (fs.existsSync(localPath)) {
+        return res.sendFile(localPath);
+    }
+
+    try {
+        const db = await connectMongo();
+        const bucket = new GridFSBucket(db, { bucketName: 'uploads' });
+        const fileDoc = await db.collection('uploads.files').findOne({ filename: filename });
+
+        if (!fileDoc) {
+            return res.status(404).send('File not found');
+        }
+
+        if (fileDoc.contentType) {
+            res.setHeader('Content-Type', fileDoc.contentType);
+        }
+
+        if (!fs.existsSync(path.join(__dirname, 'uploads'))) {
+            fs.mkdirSync(path.join(__dirname, 'uploads'), { recursive: true });
+        }
+        const writeStream = fs.createWriteStream(localPath);
+        const downloadStream = bucket.openDownloadStreamByName(filename);
+
+        downloadStream.pipe(writeStream);
+        downloadStream.pipe(res);
+    } catch (err) {
+        console.error('Error fetching file from GridFS:', err.message);
+        res.status(500).send('Error retrieving file');
+    }
+});
 
 // Configure Multer for File Uploads
 const storage = multer.diskStorage({
@@ -117,11 +153,25 @@ app.post('/api/logout', (req, res) => {
     res.json({ message: 'Logged out successfully' });
 });
 
-// File Upload Route (Protected)
-app.post('/api/upload', authenticateToken, upload.any(), (req, res) => {
+// File Upload Route (Protected) - Saves to Disk + MongoDB Atlas GridFS
+app.post('/api/upload', authenticateToken, upload.any(), async (req, res) => {
     const file = req.files && req.files.length > 0 ? req.files[0] : req.file;
     if (!file) return res.status(400).json({ error: 'Please upload a file' });
     const fileUrl = '/uploads/' + file.filename;
+
+    // Stream into MongoDB Atlas GridFS for permanent persistence across all Render redeploys!
+    try {
+        const db = await connectMongo();
+        const bucket = new GridFSBucket(db, { bucketName: 'uploads' });
+        const uploadStream = bucket.openUploadStream(file.filename, {
+            contentType: file.mimetype || 'application/octet-stream',
+            metadata: { originalName: file.originalname, size: file.size }
+        });
+        fs.createReadStream(file.path).pipe(uploadStream);
+    } catch (err) {
+        console.error('GridFS Upload Error:', err.message);
+    }
+
     res.json({ imageUrl: fileUrl, fileUrl: fileUrl });
 });
 
