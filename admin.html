@@ -45,6 +45,7 @@
                 <li class="nav-item" data-target="quote-section">💬 Quote Box</li>
                 <li class="nav-item" data-target="footer-box-section">📝 Footer Box</li>
                 <li class="nav-item" data-target="achievements-section">🏆 Certifications & Awards</li>
+                <li class="nav-item" data-target="testimonials-section">⭐ Client Testimonials</li>
                 <li class="nav-item" data-target="custom-content-section">✍️ Custom Content</li>
                 <li class="nav-item" data-target="theme-section">🎨 Theme Switcher</li>
             </ul>
@@ -322,6 +323,39 @@
                 </div>
 
                 <div class="item-list" id="achievements-list">
+                    <!-- Loaded dynamically -->
+                </div>
+            </section>
+
+            <!-- Testimonials Section -->
+            <section id="testimonials-section" class="section">
+                <div class="section-header">
+                    <h1>Client Testimonials</h1>
+                    <button class="btn" id="add-testimonial-btn" style="width: auto;">+ Add Testimonial</button>
+                </div>
+
+                <div class="card" id="testimonial-form-card" style="display: none;">
+                    <h3 id="testimonial-form-title">Add Testimonial</h3>
+                    <form id="testimonial-form">
+                        <input type="hidden" id="testimonial-id">
+                        <div class="form-group">
+                            <label>Client Name</label>
+                            <input type="text" id="testimonial-client-name" class="form-control" required placeholder="e.g. Sarah J.">
+                        </div>
+                        <div class="form-group">
+                            <label>Client Title / Role / Company</label>
+                            <input type="text" id="testimonial-client-title" class="form-control" required placeholder="e.g. Project Manager">
+                        </div>
+                        <div class="form-group">
+                            <label>Review / Feedback Quote</label>
+                            <textarea id="testimonial-quote" class="form-control" required placeholder="Write client's review here..."></textarea>
+                        </div>
+                        <button type="submit" class="btn">Save Testimonial</button>
+                        <button type="button" class="btn danger" id="cancel-testimonial-btn" style="margin-top: 1rem;">Cancel</button>
+                    </form>
+                </div>
+
+                <div class="item-list" id="testimonials-list">
                     <!-- Loaded dynamically -->
                 </div>
             </section>

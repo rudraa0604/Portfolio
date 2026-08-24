@@ -120,6 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loadEducation();
         loadProjects();
         loadAchievements();
+        loadTestimonials();
         loadCustomContent();
         loadTheme();
     };
@@ -702,6 +703,83 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast('Achievement saved');
         document.getElementById('achievement-form-card').style.display = 'none';
         loadAchievements();
+    });
+
+    // --- Testimonials ---
+    const loadTestimonials = async () => {
+        const res = await fetch('/api/testimonials');
+        const data = await res.json();
+        const list = document.getElementById('testimonials-list');
+        list.innerHTML = '';
+        data.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'item-row';
+            div.innerHTML = `
+                <div class="item-info">
+                    <h4></h4>
+                    <p class="role-text" style="color: var(--accent); font-size: 0.85rem; margin-bottom: 0.25rem;"></p>
+                    <p class="quote-preview" style="color: var(--text-secondary); font-style: italic;"></p>
+                </div>
+                <div class="item-actions">
+                    <button type="button" class="btn edit-btn">Edit</button>
+                    <button type="button" class="btn danger delete-btn">Delete</button>
+                </div>
+            `;
+            div.querySelector('h4').textContent = item.client_name;
+            div.querySelector('.role-text').textContent = item.client_title || '';
+            div.querySelector('.quote-preview').textContent = `"${item.quote}"`;
+            div.querySelector('.edit-btn').addEventListener('click', () => editTestimonial(item.id, item.client_name, item.client_title, item.quote));
+            div.querySelector('.delete-btn').addEventListener('click', () => deleteTestimonial(item.id));
+            list.appendChild(div);
+        });
+    };
+
+    window.editTestimonial = (id, client_name, client_title, quote) => {
+        document.getElementById('testimonial-id').value = id;
+        document.getElementById('testimonial-client-name').value = client_name || '';
+        document.getElementById('testimonial-client-title').value = client_title || '';
+        document.getElementById('testimonial-quote').value = quote || '';
+        document.getElementById('testimonial-form-card').style.display = 'block';
+        document.getElementById('testimonial-form-title').textContent = 'Edit Testimonial';
+    };
+
+    window.deleteTestimonial = async (id) => {
+        if (!confirm('Are you sure you want to delete this testimonial?')) return;
+        await fetch(`/api/testimonials/${id}`, { method: 'DELETE' });
+        showToast('Testimonial deleted');
+        loadTestimonials();
+    };
+
+    document.getElementById('add-testimonial-btn').addEventListener('click', () => {
+        document.getElementById('testimonial-form').reset();
+        document.getElementById('testimonial-id').value = '';
+        document.getElementById('testimonial-form-card').style.display = 'block';
+        document.getElementById('testimonial-form-title').textContent = 'Add Testimonial';
+    });
+
+    document.getElementById('cancel-testimonial-btn').addEventListener('click', () => {
+        document.getElementById('testimonial-form-card').style.display = 'none';
+    });
+
+    document.getElementById('testimonial-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('testimonial-id').value;
+        const client_name = document.getElementById('testimonial-client-name').value;
+        const client_title = document.getElementById('testimonial-client-title').value;
+        const quote = document.getElementById('testimonial-quote').value;
+
+        const url = id ? `/api/testimonials/${id}` : '/api/testimonials';
+        const method = id ? 'PUT' : 'POST';
+
+        await fetch(url, {
+            method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ client_name, client_title, quote })
+        });
+        
+        showToast('Testimonial saved');
+        document.getElementById('testimonial-form-card').style.display = 'none';
+        loadTestimonials();
     });
 
     // --- Custom Content ---

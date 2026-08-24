@@ -232,6 +232,12 @@ app.post('/api/testimonials', authenticateToken, (req, res) => {
         res.json({ id: this.lastID });
     });
 });
+app.put('/api/testimonials/:id', authenticateToken, (req, res) => {
+    db.run("UPDATE testimonials SET quote = ?, client_name = ?, client_title = ? WHERE id = ?", [req.body.quote, req.body.client_name, req.body.client_title, req.params.id], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: "Testimonial updated successfully" });
+    });
+});
 
 // Custom Content endpoints
 makeGetRoute('/api/custom_content', 'custom_content');
