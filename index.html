@@ -92,17 +92,17 @@
     
     <div class="container">
         <section class="hero" id="home">
-            <div class="hero-container" style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 4rem;">
-                <div class="hero-left" style="flex: 1;">
+            <div class="hero-container">
+                <div class="hero-left">
                     <div class="intro">
                         <span class="handwriting">Hello, I'm</span>
                         <h1 class="main-title" id="main-name">RUDRA PRATAP<br>CHAURASIYA</h1>
                         <h2 class="subtitle" id="main-title-sub">CYBERSECURITY &<br>GRAPHIC DESIGNER</h2>
                         <p class="description" id="main-desc"></p>
                         
-                        <div class="hero-buttons" style="display: flex; gap: 1rem; margin-top: 2rem; margin-bottom: 2rem;">
-                            <a href="#portfolio" class="btn solid-btn" style="background: var(--red-accent); color: #fff;">View Work</a>
-                            <a href="#" id="hero-resume-btn" class="btn outline-btn" download style="display: flex; align-items: center; gap: 0.5rem;">Resume <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></a>
+                        <div class="hero-buttons">
+                            <a href="#portfolio" class="btn solid-btn">View Work</a>
+                            <a href="#" id="hero-resume-btn" class="btn outline-btn" download>Resume <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></a>
                         </div>
                         
                         <div class="worldwide">
@@ -112,28 +112,28 @@
                     </div>
                 </div>
                 
-                <div class="hero-right" style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2rem;">
+                <div class="hero-right">
                     <div class="circular-frame">
                         <img id="hero-profile-photo" src="" alt="Profile" style="display: none;">
                     </div>
                     
-                    <div class="hero-stats" style="align-items: center;">
-                        <div class="badge" style="text-align: center; justify-content: center; margin-bottom: 2rem;">
+                    <div class="hero-stats">
+                        <div class="badge">
                             <span class="star">✦</span>
                             <p>Turning ideas<br>into powerful<br>digital experiences.</p>
                         </div>
-                        <div class="stat-list" id="hero-stats" style="text-align: center;"></div>
+                        <div class="stat-list" id="hero-stats"></div>
                     </div>
                 </div>
             </div>
         </section>
 
         <!-- Services Section -->
-        <section class="services" id="services" style="margin-top: 5rem;">
+        <section class="services" id="services">
             <div class="section-header">
                 <h2>MY SERVICES</h2>
             </div>
-            <div class="project-grid" id="services-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem;">
+            <div class="services-grid" id="services-grid">
                 <!-- Services loaded dynamically -->
             </div>
         </section>
@@ -218,7 +218,7 @@
         </section>
 
         <!-- Custom Content Section -->
-        <section id="custom-content-container" style="margin-top: 4rem; padding: 2rem 0;"></section>
+        <section id="custom-content-container" class="custom-content-section"></section>
 
         <footer id="contact">
             <div class="footer-left">
@@ -266,9 +266,9 @@
             </div>
             <div class="footer-right">
                 <!-- Footer Box Content (Editable in Admin Panel) -->
-                <div id="footer-box-container" style="display: none; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 2rem; max-width: 400px; margin-left: auto;">
-                    <h3 id="footer-box-title" style="margin-bottom: 1rem; color: var(--text-color); font-size: 1.5rem; letter-spacing: 1px;"></h3>
-                    <div id="footer-box-desc" style="color: var(--grey-text); line-height: 1.6;"></div>
+                <div id="footer-box-container" class="footer-box-container" style="display: none;">
+                    <h3 id="footer-box-title"></h3>
+                    <div id="footer-box-desc"></div>
                 </div>
             </div>
         </footer>
