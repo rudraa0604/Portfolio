@@ -106,10 +106,16 @@ function parseIdQuery(id) {
 
 function formatDoc(doc) {
     if (!doc) return null;
-    return {
+    const res = {
         ...doc,
         id: doc.id !== undefined ? doc.id : (doc._id ? doc._id.toString() : undefined)
     };
+    if (doc.project_url !== undefined || doc.live_link !== undefined) {
+        const link = doc.project_url || doc.live_link || '';
+        res.project_url = link;
+        res.live_link = link;
+    }
+    return res;
 }
 
 function formatDocs(docs) {

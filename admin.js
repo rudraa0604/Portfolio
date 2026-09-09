@@ -633,15 +633,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const url = id ? `/api/projects/${id}` : '/api/projects';
             const method = id ? 'PUT' : 'POST';
 
-            await fetch(url, {
+            const res = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ title, category, image_url, project_url })
             });
+
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.error || 'Failed to save project');
+            }
             
-            showToast('Project saved');
+            showToast('Project saved successfully!');
             document.getElementById('project-form-card').style.display = 'none';
-            loadProjects();
+            await loadProjects();
         } catch (err) {
             showToast(err.message, true);
         }
