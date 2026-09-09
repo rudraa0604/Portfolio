@@ -279,7 +279,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 return `https://${trimmed}`;
             };
 
-            document.getElementById('footer-availability').innerText = `→ ${profile.availability || ''}`;
+            const footerAvail = document.getElementById('footer-availability');
+            if (footerAvail) {
+                footerAvail.innerText = `→ ${profile.availability || 'AVAILABLE FOR INTERNSHIP'}`;
+                const userEmail = profile.email || 'rudraa0604@gmail.com';
+                footerAvail.href = `mailto:${userEmail}?subject=Internship%20/%20Project%20Inquiry&body=Hi%20Rudra,%0D%0A%0D%0AI%20saw%20your%20portfolio%20and%20would%20like%20to%20discuss...`;
+            }
             if (profile.email && document.getElementById('footer-email')) {
                 document.getElementById('footer-email').innerHTML = `<a href="mailto:${profile.email}" style="color: inherit; text-decoration: none;">${profile.email}</a>`;
             }
@@ -362,10 +367,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     return `https://${trimmed}`;
                 };
 
-                if (p.project_url && p.project_url.trim()) {
-                    const fullUrl = formatUrl(p.project_url);
+                const targetLink = p.project_url || p.live_link || '';
+                const isRealUrl = targetLink && targetLink.trim() && targetLink.trim() !== 'null' && targetLink.trim() !== 'undefined';
+
+                if (isRealUrl) {
+                    const fullUrl = formatUrl(targetLink);
                     projectGrid.innerHTML += `
-                        <a href="${fullUrl}" target="_blank" rel="noopener noreferrer" class="project-card" style="text-decoration: none; color: inherit; display: flex; flex-direction: column;">
+                        <a href="${fullUrl}" target="_blank" rel="noopener noreferrer" class="project-card" style="text-decoration: none; color: inherit; display: flex; flex-direction: column; cursor: pointer;">
                             <div class="project-img">${mediaHtml}</div>
                             <div class="project-info">
                                 <div class="project-num">${num}</div>

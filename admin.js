@@ -569,9 +569,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     <button type="button" class="btn danger delete-btn">Delete</button>
                 </div>
             `;
+            const linkVal = item.project_url || item.live_link || '';
             div.querySelector('h4').textContent = item.title;
-            div.querySelector('p').textContent = item.project_url ? `${item.category} • 🔗 ${item.project_url}` : item.category;
-            div.querySelector('.edit-btn').addEventListener('click', () => editProject(item.id, item.title, item.category, item.image_url, item.project_url));
+            div.querySelector('p').textContent = linkVal ? `${item.category} • 🔗 ${linkVal}` : item.category;
+            div.querySelector('.edit-btn').addEventListener('click', () => editProject(item.id, item.title, item.category, item.image_url, linkVal));
             div.querySelector('.delete-btn').addEventListener('click', () => deleteProject(item.id));
             list.appendChild(div);
         });
