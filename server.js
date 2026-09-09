@@ -33,7 +33,14 @@ app.get('/uploads/:filename', async (req, res) => {
     const localPath = path.join(__dirname, 'uploads', filename);
 
     if (fs.existsSync(localPath)) {
-        return res.sendFile(localPath);
+        return res.sendFile(localPath, (err) => {
+            if (err && !res.headersSent) {
+                if (err.status === 416 || err.code === 'ERR_STREAM_PREMATURE_CLOSE' || err.code === 'ECONNABORTED') {
+                    return res.status(416).end();
+                }
+                res.status(err.status || 500).end();
+            }
+        });
     }
 
     try {
@@ -55,11 +62,16 @@ app.get('/uploads/:filename', async (req, res) => {
         const writeStream = fs.createWriteStream(localPath);
         const downloadStream = bucket.openDownloadStreamByName(filename);
 
+        downloadStream.on('error', (err) => {
+            console.error('GridFS stream error:', err.message);
+            if (!res.headersSent) res.status(500).send('Error retrieving file');
+        });
+
         downloadStream.pipe(writeStream);
         downloadStream.pipe(res);
     } catch (err) {
         console.error('Error fetching file from GridFS:', err.message);
-        res.status(500).send('Error retrieving file');
+        if (!res.headersSent) res.status(500).send('Error retrieving file');
     }
 });
 
@@ -256,8 +268,15 @@ app.get('/api/projects', async (req, res) => {
 app.post('/api/projects', authenticateToken, async (req, res) => {
     try {
         const db = await connectMongo();
-        const { title, category, image_url, live_link } = req.body;
-        const result = await db.collection('projects').insertOne({ title, category, image_url, live_link });
+        const { title, category, image_url } = req.body;
+        const project_url = req.body.project_url || req.body.live_link || '';
+        const result = await db.collection('projects').insertOne({ 
+            title, 
+            category, 
+            image_url, 
+            live_link: project_url, 
+            project_url 
+        });
         res.json({ id: result.insertedId.toString() });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -267,8 +286,17 @@ app.post('/api/projects', authenticateToken, async (req, res) => {
 app.put('/api/projects/:id', authenticateToken, async (req, res) => {
     try {
         const db = await connectMongo();
-        const { title, category, image_url, live_link } = req.body;
-        await db.collection('projects').updateOne(parseIdQuery(req.params.id), { $set: { title, category, image_url, live_link } });
+        const { title, category, image_url } = req.body;
+        const project_url = req.body.project_url || req.body.live_link || '';
+        await db.collection('projects').updateOne(parseIdQuery(req.params.id), { 
+            $set: { 
+                title, 
+                category, 
+                image_url, 
+                live_link: project_url, 
+                project_url 
+            } 
+        });
         res.json({ message: "Project updated successfully" });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -531,14 +559,23 @@ app.post('/api/reviews', async (req, res) => {
 });
 
 app.patch('/api/reviews/:id', authenticateToken, async (req, res) => {
-    const { status } = req.body;
-    if (!['pending', 'approved', 'rejected'].includes(status)) {
-        return res.status(400).json({ error: "Invalid status. Must be pending, approved, or rejected." });
+    const { status, name, designation, review_text, rating } = req.body;
+    const updateObj = {};
+    if (status) {
+        if (!['pending', 'approved', 'rejected'].includes(status)) {
+            return res.status(400).json({ error: "Invalid status. Must be pending, approved, or rejected." });
+        }
+        updateObj.status = status;
     }
+    if (name !== undefined) updateObj.name = String(name).trim().slice(0, 100);
+    if (designation !== undefined) updateObj.designation = String(designation).trim().slice(0, 120);
+    if (review_text !== undefined) updateObj.review_text = String(review_text).trim().slice(0, 500);
+    if (rating !== undefined) updateObj.rating = Math.max(1, Math.min(5, parseInt(rating) || 5));
+
     try {
         const db = await connectMongo();
-        await db.collection('reviews').updateOne(parseIdQuery(req.params.id), { $set: { status } });
-        res.json({ message: `Review ${status} successfully` });
+        await db.collection('reviews').updateOne(parseIdQuery(req.params.id), { $set: updateObj });
+        res.json({ message: "Review updated successfully" });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -552,6 +589,36 @@ app.delete('/api/reviews/:id', authenticateToken, async (req, res) => {
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
+});
+
+// Compatibility Route Aliases
+app.get('/api/services', async (req, res) => {
+    try {
+        const db = await connectMongo();
+        const rows = await db.collection('skills').find({}).toArray();
+        res.json(formatDocs(rows));
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/achievements', async (req, res) => {
+    try {
+        const db = await connectMongo();
+        const rows = await db.collection('certifications').find({}).toArray();
+        res.json(formatDocs(rows));
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/auth/status', (req, res) => {
+    const token = req.cookies.admin_token;
+    if (!token) return res.json({ authenticated: false });
+    jwt.verify(token, JWT_SECRET, (err, decoded) => {
+        if (err) return res.json({ authenticated: false });
+        res.json({ authenticated: true, user: decoded });
+    });
 });
 
 // Custom Content endpoints
