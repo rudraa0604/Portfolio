@@ -94,8 +94,11 @@ function parseIdQuery(id) {
     if (!id) return {};
     const queries = [];
     if (ObjectId.isValid(id)) {
-        queries.push({ _id: new ObjectId(id) });
+        try {
+            queries.push({ _id: new ObjectId(id) });
+        } catch (e) {}
     }
+    queries.push({ _id: String(id) });
     const num = Number(id);
     if (!isNaN(num)) {
         queries.push({ id: num });
@@ -120,6 +123,148 @@ function formatDoc(doc) {
 
 function formatDocs(docs) {
     return (docs || []).map(formatDoc);
+}
+
+// Media Cleanup Helpers (GridFS + Disk)
+function extractFilename(urlOrPath) {
+    if (!urlOrPath || typeof urlOrPath !== 'string') return '';
+    const clean = urlOrPath.trim();
+    if (clean.startsWith('http://') || clean.startsWith('https://') || clean.startsWith('blob:') || clean.startsWith('data:')) {
+        return '';
+    }
+    const parts = clean.split(/[/\\]/);
+    const fname = parts[parts.length - 1];
+    return fname.replace(/[\r\n\t]/g, '').trim();
+}
+
+async function deleteMediaFile(urlOrPath) {
+    const filename = extractFilename(urlOrPath);
+    if (!filename) return false;
+
+    // 1. Delete from MongoDB Atlas GridFS (files + all binary chunks)
+    try {
+        const db = await connectMongo();
+        const bucket = new GridFSBucket(db, { bucketName: 'uploads' });
+        const files = await db.collection('uploads.files').find({ filename: filename }).toArray();
+        for (const file of files) {
+            try {
+                await bucket.delete(file._id);
+            } catch (err) {
+                await db.collection('uploads.files').deleteOne({ _id: file._id });
+                await db.collection('uploads.chunks').deleteMany({ files_id: file._id });
+            }
+        }
+    } catch (err) {
+        console.error(`Error deleting ${filename} from GridFS:`, err.message);
+    }
+
+    // 2. Delete from local disk
+    try {
+        const localPath = path.join(__dirname, 'uploads', filename);
+        if (fs.existsSync(localPath)) {
+            fs.unlinkSync(localPath);
+            console.log(`Deleted local file: ${filename}`);
+        }
+    } catch (err) {
+        console.error(`Error deleting local file ${filename}:`, err.message);
+    }
+
+    return true;
+}
+
+async function getActiveMediaFilenames(db) {
+    const active = new Set();
+
+    // Projects
+    const projects = await db.collection('projects').find({}).toArray();
+    projects.forEach(p => {
+        const f = extractFilename(p.image_url);
+        if (f) active.add(f);
+    });
+
+    // Profile
+    const profile = await db.collection('profile').findOne({});
+    if (profile) {
+        ['profile_photo', 'resume_url', 'background_url'].forEach(k => {
+            const f = extractFilename(profile[k]);
+            if (f) active.add(f);
+        });
+        if (profile.footer_desc) {
+            const matches = profile.footer_desc.match(/\/uploads\/[^\s"\'<>]+/g);
+            if (matches) {
+                matches.forEach(m => {
+                    const f = extractFilename(m);
+                    if (f) active.add(f);
+                });
+            }
+        }
+    }
+
+    // Certifications
+    const certs = await db.collection('certifications').find({}).toArray();
+    certs.forEach(c => {
+        const f = extractFilename(c.image_url);
+        if (f) active.add(f);
+    });
+
+    // Custom Content
+    const customs = await db.collection('custom_content').find({}).toArray();
+    customs.forEach(c => {
+        if (c.content) {
+            const matches = c.content.match(/\/uploads\/[^\s"\'<>]+/g);
+            if (matches) {
+                matches.forEach(m => {
+                    const f = extractFilename(m);
+                    if (f) active.add(f);
+                });
+            }
+        }
+    });
+
+    return active;
+}
+
+async function cleanAllOrphanedFiles() {
+    const db = await connectMongo();
+    const bucket = new GridFSBucket(db, { bucketName: 'uploads' });
+    const active = await getActiveMediaFilenames(db);
+
+    const allFiles = await db.collection('uploads.files').find({}).toArray();
+    let deletedCount = 0;
+    let freedBytes = 0;
+
+    for (const file of allFiles) {
+        if (!active.has(file.filename)) {
+            try {
+                await bucket.delete(file._id);
+                await db.collection('uploads.chunks').deleteMany({ files_id: file._id });
+            } catch (e) {
+                await db.collection('uploads.files').deleteOne({ _id: file._id });
+                await db.collection('uploads.chunks').deleteMany({ files_id: file._id });
+            }
+            deletedCount++;
+            freedBytes += (file.length || 0);
+
+            const localPath = path.join(__dirname, 'uploads', file.filename);
+            if (fs.existsSync(localPath)) {
+                try { fs.unlinkSync(localPath); } catch (e) {}
+            }
+        }
+    }
+
+    const uploadsDir = path.join(__dirname, 'uploads');
+    if (fs.existsSync(uploadsDir)) {
+        try {
+            const diskFiles = fs.readdirSync(uploadsDir);
+            for (const f of diskFiles) {
+                if (!active.has(f)) {
+                    try { fs.unlinkSync(path.join(uploadsDir, f)); } catch(e) {}
+                }
+            }
+        } catch (e) {}
+    }
+
+    return { deletedCount, freedBytes };
 }
 
 // Authentication Middleware
@@ -169,6 +314,44 @@ app.get('/api/check-auth', authenticateToken, (req, res) => {
 app.post('/api/logout', (req, res) => {
     res.clearCookie('admin_token');
     res.json({ message: 'Logged out successfully' });
+});
+
+// Storage Stats Route (Protected)
+app.get('/api/storage/stats', authenticateToken, async (req, res) => {
+    try {
+        const db = await connectMongo();
+        const files = await db.collection('uploads.files').find({}).toArray();
+        const totalFiles = files.length;
+        const totalBytes = files.reduce((acc, f) => acc + (f.length || 0), 0);
+        const chunkCount = await db.collection('uploads.chunks').countDocuments();
+        res.json({
+            totalFiles,
+            totalSizeBytes: totalBytes,
+            totalSizeMB: (totalBytes / (1024 * 1024)).toFixed(2),
+            chunkCount
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Storage Cleanup Route (Protected) - Cleans unreferenced orphaned files from GridFS & Disk
+app.post('/api/storage/cleanup', authenticateToken, async (req, res) => {
+    try {
+        const result = await cleanAllOrphanedFiles();
+        const db = await connectMongo();
+        const files = await db.collection('uploads.files').find({}).toArray();
+        const totalBytes = files.reduce((acc, f) => acc + (f.length || 0), 0);
+        res.json({
+            message: `Cleanup completed! Deleted ${result.deletedCount} unused file(s).`,
+            deletedCount: result.deletedCount,
+            freedBytesMB: (result.freedBytes / (1024 * 1024)).toFixed(2),
+            remainingFiles: files.length,
+            currentSizeMB: (totalBytes / (1024 * 1024)).toFixed(2)
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // File Upload Route (Protected) - Saves to Disk + MongoDB Atlas GridFS
@@ -229,6 +412,17 @@ app.post('/api/profile', authenticateToken, async (req, res) => {
         const db = await connectMongo();
         const c = (await db.collection('profile').findOne({})) || {};
         const b = req.body || {};
+
+        // Automatic Media Cleanup for updated / removed Profile media
+        if (b.profile_photo !== undefined && c.profile_photo && c.profile_photo !== b.profile_photo) {
+            await deleteMediaFile(c.profile_photo);
+        }
+        if (b.resume_url !== undefined && c.resume_url && c.resume_url !== b.resume_url) {
+            await deleteMediaFile(c.resume_url);
+        }
+        if (b.background_url !== undefined && c.background_url && c.background_url !== b.background_url) {
+            await deleteMediaFile(c.background_url);
+        }
 
         const updated = {
             name: b.name !== undefined ? b.name : (c.name || ''),
@@ -292,9 +486,17 @@ app.post('/api/projects', authenticateToken, async (req, res) => {
 app.put('/api/projects/:id', authenticateToken, async (req, res) => {
     try {
         const db = await connectMongo();
+        const query = parseIdQuery(req.params.id);
         const { title, category, image_url } = req.body;
         const project_url = req.body.project_url || req.body.live_link || '';
-        await db.collection('projects').updateOne(parseIdQuery(req.params.id), { 
+
+        // Clean up previous image if replaced
+        const existing = await db.collection('projects').findOne(query);
+        if (existing && existing.image_url && image_url && existing.image_url !== image_url) {
+            await deleteMediaFile(existing.image_url);
+        }
+
+        await db.collection('projects').updateOne(query, { 
             $set: { 
                 title, 
                 category, 
@@ -312,7 +514,15 @@ app.put('/api/projects/:id', authenticateToken, async (req, res) => {
 app.delete('/api/projects/:id', authenticateToken, async (req, res) => {
     try {
         const db = await connectMongo();
-        await db.collection('projects').deleteOne(parseIdQuery(req.params.id));
+        const query = parseIdQuery(req.params.id);
+        
+        // Auto-delete associated media file from GridFS & Disk
+        const existing = await db.collection('projects').findOne(query);
+        if (existing && existing.image_url) {
+            await deleteMediaFile(existing.image_url);
+        }
+
+        await db.collection('projects').deleteOne(query);
         res.json({ message: "Project deleted successfully" });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -425,7 +635,15 @@ app.post('/api/certifications', authenticateToken, async (req, res) => {
 app.put('/api/certifications/:id', authenticateToken, async (req, res) => {
     try {
         const db = await connectMongo();
-        await db.collection('certifications').updateOne(parseIdQuery(req.params.id), { $set: { name: req.body.name, issuer: req.body.issuer, image_url: req.body.image_url || '' } });
+        const query = parseIdQuery(req.params.id);
+        const { name, issuer, image_url } = req.body;
+
+        const existing = await db.collection('certifications').findOne(query);
+        if (existing && existing.image_url && image_url && existing.image_url !== image_url) {
+            await deleteMediaFile(existing.image_url);
+        }
+
+        await db.collection('certifications').updateOne(query, { $set: { name, issuer, image_url: image_url || '' } });
         res.json({ message: "Certification updated successfully" });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -435,7 +653,14 @@ app.put('/api/certifications/:id', authenticateToken, async (req, res) => {
 app.delete('/api/certifications/:id', authenticateToken, async (req, res) => {
     try {
         const db = await connectMongo();
-        await db.collection('certifications').deleteOne(parseIdQuery(req.params.id));
+        const query = parseIdQuery(req.params.id);
+        
+        const existing = await db.collection('certifications').findOne(query);
+        if (existing && existing.image_url) {
+            await deleteMediaFile(existing.image_url);
+        }
+
+        await db.collection('certifications').deleteOne(query);
         res.json({ message: "Certification deleted successfully" });
     } catch (err) {
         res.status(500).json({ error: err.message });

@@ -35,6 +35,39 @@ document.addEventListener('DOMContentLoaded', () => {
     setupFileInput('bg-media-upload', 'bg-media-label');
     setupFileInput('project-image-upload', 'project-image-label');
 
+    // Project image validation
+    const projImgUpload = document.getElementById('project-image-upload');
+    if (projImgUpload) {
+        projImgUpload.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                const file = e.target.files[0];
+                const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg', 'image/gif'];
+                if (!validTypes.includes(file.type)) {
+                    showToast('Invalid format. Please upload an image (JPG, PNG, WEBP, GIF).', true);
+                    e.target.value = '';
+                    const label = document.getElementById('project-image-label');
+                    if (label) {
+                        label.textContent = 'Choose project image (.jpg, .png, .webp)...';
+                        label.style.borderColor = '';
+                        label.style.color = '';
+                    }
+                    return;
+                }
+                if (file.size > 10 * 1024 * 1024) {
+                    showToast('File too large. Max project image size is 10MB.', true);
+                    e.target.value = '';
+                    const label = document.getElementById('project-image-label');
+                    if (label) {
+                        label.textContent = 'Choose project image (.jpg, .png, .webp)...';
+                        label.style.borderColor = '';
+                        label.style.color = '';
+                    }
+                    return;
+                }
+            }
+        });
+    }
+
 
     // --- Toast Notification ---
     const showToast = (message, isError = false) => {
@@ -123,6 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loadReviews();
         loadCustomContent();
         loadTheme();
+        loadStorageStats();
     };
 
     // --- Profile & Background Media ---
@@ -1146,5 +1180,70 @@ document.addEventListener('DOMContentLoaded', () => {
             showToast('Theme updated!');
         });
     });
+
+    // --- Database Storage & Optimizer ---
+    const loadStorageStats = async () => {
+        try {
+            const res = await fetch('/api/storage/stats');
+            if (!res.ok) return;
+            const data = await res.json();
+            
+            const totalFilesEl = document.getElementById('storage-total-files');
+            const totalSizeEl = document.getElementById('storage-total-size');
+            const statusBadge = document.getElementById('storage-status-badge');
+
+            if (totalFilesEl) totalFilesEl.textContent = data.totalFiles || 0;
+            if (totalSizeEl) totalSizeEl.textContent = `${data.totalSizeMB || 0} MB`;
+            
+            if (statusBadge) {
+                const sizeMB = parseFloat(data.totalSizeMB || 0);
+                if (sizeMB > 440) {
+                    statusBadge.textContent = '⚠️ Alert (> 440 MB)';
+                    statusBadge.style.color = '#ef4444';
+                } else if (sizeMB > 250) {
+                    statusBadge.textContent = '🟡 Moderate (> 250 MB)';
+                    statusBadge.style.color = '#f59e0b';
+                } else {
+                    statusBadge.textContent = '🟢 Healthy (< 512 MB)';
+                    statusBadge.style.color = 'var(--success)';
+                }
+            }
+        } catch (e) {
+            console.error('Error loading storage stats:', e);
+        }
+    };
+
+    const refreshStorageBtn = document.getElementById('refresh-storage-btn');
+    if (refreshStorageBtn) {
+        refreshStorageBtn.addEventListener('click', async () => {
+            showToast('Refreshing database stats...');
+            await loadStorageStats();
+        });
+    }
+
+    const runCleanupBtn = document.getElementById('run-cleanup-btn');
+    const cleanupSpinner = document.getElementById('cleanup-spinner');
+    if (runCleanupBtn) {
+        runCleanupBtn.addEventListener('click', async () => {
+            if (!confirm('Run automatic database cleanup to purge unreferenced and deleted files from MongoDB?')) return;
+            runCleanupBtn.disabled = true;
+            if (cleanupSpinner) cleanupSpinner.style.display = 'inline';
+            try {
+                const res = await fetch('/api/storage/cleanup', { method: 'POST' });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast(data.message || 'Cleanup complete!');
+                    await loadStorageStats();
+                } else {
+                    showToast(data.error || 'Cleanup failed', true);
+                }
+            } catch (err) {
+                showToast(err.message, true);
+            } finally {
+                runCleanupBtn.disabled = false;
+                if (cleanupSpinner) cleanupSpinner.style.display = 'none';
+            }
+        });
+    }
 
 });

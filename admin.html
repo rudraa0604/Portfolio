@@ -48,6 +48,7 @@
                 <li class="nav-item" data-target="reviews-section">⭐ Client Reviews <span id="pending-reviews-badge" style="display: none; background: #f59e0b; color: #000; font-size: 0.75rem; font-weight: 700; padding: 2px 7px; border-radius: 10px; margin-left: 6px;">0</span></li>
                 <li class="nav-item" data-target="custom-content-section">✍️ Custom Content</li>
                 <li class="nav-item" data-target="theme-section">🎨 Theme Switcher</li>
+                <li class="nav-item" data-target="storage-section">💾 Database Storage</li>
             </ul>
             <button id="logout-btn" class="btn logout-btn">Logout</button>
         </aside>
@@ -199,10 +200,10 @@
                             <input type="text" id="project-category" class="form-control" required>
                         </div>
                         <div class="form-group">
-                            <label>Project Image/Thumbnail</label>
+                            <label>Project Image/Thumbnail (JPG, PNG, WEBP)</label>
                             <div class="custom-file-upload">
-                                <input type="file" id="project-image-upload" accept="image/*,video/*">
-                                <div class="file-upload-btn" id="project-image-label">Choose project thumbnail...</div>
+                                <input type="file" id="project-image-upload" accept="image/png, image/jpeg, image/jpg, image/webp, image/gif">
+                                <div class="file-upload-btn" id="project-image-label">Choose project image (.jpg, .png, .webp)...</div>
                             </div>
                             <input type="hidden" id="project-image-url">
                             <img id="project-image-preview" class="image-preview" style="display: none;">
@@ -497,6 +498,46 @@
                             <div class="theme-preview theme-space"></div>
                             <h4>Deep Space</h4>
                         </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Database Storage & Optimization Section -->
+            <section id="storage-section" class="section">
+                <div class="section-header">
+                    <h1>MongoDB Database Storage</h1>
+                    <button class="btn" id="refresh-storage-btn" style="width: auto;">🔄 Refresh Stats</button>
+                </div>
+                <div class="card">
+                    <h3>Atlas Cloud Database Usage</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.95rem;">
+                        Monitor your MongoDB Atlas storage and clean up any unreferenced or orphaned files immediately.
+                    </p>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem;">
+                            <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Total Media Files</div>
+                            <div id="storage-total-files" style="font-size: 1.8rem; font-weight: 700; color: var(--text-primary);">--</div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem;">
+                            <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Current Storage Size</div>
+                            <div id="storage-total-size" style="font-size: 1.8rem; font-weight: 700; color: var(--accent);">-- MB</div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem;">
+                            <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.5rem;">Atlas Quota Status</div>
+                            <div id="storage-status-badge" style="font-size: 1.1rem; font-weight: 600; color: var(--success); margin-top: 0.4rem;">🟢 Healthy (&lt; 512 MB)</div>
+                        </div>
+                    </div>
+
+                    <div style="border-top: 1px solid var(--border); padding-top: 1.5rem;">
+                        <h4 style="margin-bottom: 0.5rem; font-size: 1.1rem;">⚡ Optimize & Clean Unused Files</h4>
+                        <p style="color: var(--text-secondary); margin-bottom: 1.25rem; font-size: 0.9rem;">
+                            Whenever you remove or edit projects, certificates, or photos, the old media is automatically deleted from MongoDB. You can also run a manual database sweep anytime to ensure zero wasted space.
+                        </p>
+                        <button type="button" class="btn" id="run-cleanup-btn" style="width: auto; background: var(--accent); color: #000; font-weight: 600;">
+                            🧹 Run Database Clean-Up Now
+                        </button>
+                        <span id="cleanup-spinner" style="display: none; margin-left: 1rem; color: var(--text-secondary); font-size: 0.9rem;">Cleaning database...</span>
                     </div>
                 </div>
             </section>
