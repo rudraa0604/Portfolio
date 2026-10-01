@@ -16,7 +16,27 @@ const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-for-portfolio-adm
 
 app.use(cors());
 app.use(bodyParser.json());
-app.use(cookieParser());
+// Security & Force HTTPS Middleware
+app.use((req, res, next) => {
+    if (process.env.NODE_ENV === 'production' && req.headers['x-forwarded-proto'] && req.headers['x-forwarded-proto'] !== 'https') {
+        return res.redirect(301, 'https://' + req.headers.host + req.url);
+    }
+    // Standard Security Headers
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    res.setHeader('X-XSS-Protection', '1; mode=block');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    next();
+});
+
+// Legal, SEO & Static Routes
+app.get('/privacy', (req, res) => res.sendFile(path.join(__dirname, 'privacy.html')));
+app.get('/terms', (req, res) => res.sendFile(path.join(__dirname, 'terms.html')));
+app.get('/robots.txt', (req, res) => res.sendFile(path.join(__dirname, 'robots.txt')));
+app.get('/sitemap.xml', (req, res) => res.sendFile(path.join(__dirname, 'sitemap.xml')));
+app.get('/favicon.svg', (req, res) => res.sendFile(path.join(__dirname, 'favicon.svg')));
+app.get('/favicon.ico', (req, res) => res.sendFile(path.join(__dirname, 'favicon.svg')));
+
 app.use(express.static(path.join(__dirname), {
     setHeaders: (res, path) => {
         if (path.endsWith('.html') || path.endsWith('.js') || path.endsWith('.css')) {
@@ -839,13 +859,21 @@ app.get('/api/reviews', async (req, res) => {
 });
 
 app.post('/api/reviews', async (req, res) => {
+    // Bot / spam protection: hidden honeypot field check
+    if (req.body.website_hp && String(req.body.website_hp).trim().length > 0) {
+        // Silently return success to confuse the bot without storing spam
+        return res.json({ message: "Thanks! Your review will appear after approval." });
+    }
+
     const { name, designation, review_text, rating } = req.body;
     if (!name || !designation || !review_text) {
         return res.status(400).json({ error: "Name, designation, and review text are required." });
     }
-    const cleanName = String(name).trim().slice(0, 100);
-    const cleanDesig = String(designation).trim().slice(0, 120);
-    const cleanText = String(review_text).trim().slice(0, 500);
+    // HTML sanitize / escape to prevent XSS injection
+    const sanitize = (str) => String(str || '').replace(/[<>]/g, '').trim();
+    const cleanName = sanitize(name).slice(0, 100);
+    const cleanDesig = sanitize(designation).slice(0, 120);
+    const cleanText = sanitize(review_text).slice(0, 500);
     const numRating = Math.max(1, Math.min(5, parseInt(rating) || 5));
 
     try {
@@ -1061,6 +1089,14 @@ async function seedDefaults(db) {
         console.error("Error in seedDefaults:", e.message);
     }
 }
+
+// Catch-all 404 Handler for Unmatched Routes
+app.use((req, res) => {
+    if (req.accepts('html')) {
+        return res.status(404).sendFile(path.join(__dirname, '404.html'));
+    }
+    res.status(404).json({ error: 'Page or resource not found' });
+});
 
 // Start Server after connecting to MongoDB Atlas
 connectMongo().then(async (db) => {

@@ -790,11 +790,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     const submitBtn = document.getElementById('submit-review-btn');
                     const origText = submitBtn ? submitBtn.textContent : 'Submit Review';
                     
+                    const hpVal = document.getElementById('review-website-hp')?.value || '';
                     const payload = {
                         name: document.getElementById('review-name').value,
                         designation: document.getElementById('review-designation').value,
                         review_text: document.getElementById('review-text').value,
-                        rating: parseInt(reviewRatingInput.value) || 5
+                        rating: parseInt(reviewRatingInput.value) || 5,
+                        website_hp: hpVal
                     };
 
                     try {
@@ -845,6 +847,51 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
             }
+        }
+
+        // --- Cookie Consent Banner Setup ---
+        const cookieBanner = document.getElementById('cookie-consent-banner');
+        const cookieAcceptBtn = document.getElementById('cookie-accept-btn');
+        const cookieDeclineBtn = document.getElementById('cookie-decline-btn');
+
+        if (cookieBanner) {
+            const hasConsent = localStorage.getItem('cookieConsent');
+            if (!hasConsent) {
+                setTimeout(() => {
+                    cookieBanner.style.display = 'block';
+                }, 1200);
+            }
+
+            if (cookieAcceptBtn) {
+                cookieAcceptBtn.addEventListener('click', () => {
+                    localStorage.setItem('cookieConsent', 'accepted');
+                    cookieBanner.style.opacity = '0';
+                    cookieBanner.style.transform = 'translateY(20px)';
+                    setTimeout(() => cookieBanner.style.display = 'none', 400);
+                });
+            }
+
+            if (cookieDeclineBtn) {
+                cookieDeclineBtn.addEventListener('click', () => {
+                    localStorage.setItem('cookieConsent', 'declined');
+                    cookieBanner.style.opacity = '0';
+                    cookieBanner.style.transform = 'translateY(20px)';
+                    setTimeout(() => cookieBanner.style.display = 'none', 400);
+                });
+            }
+        }
+
+        // --- Back to Top Smooth Scroll ---
+        const backToTopBtn = document.getElementById('back-to-top-btn');
+        if (backToTopBtn) {
+            backToTopBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (window.lenis) {
+                    window.lenis.scrollTo(0, { duration: 1.2 });
+                } else {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+            });
         }
 
         // --- Initialize GSAP Animations ---
