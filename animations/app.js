@@ -881,19 +881,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // --- Back to Top Smooth Scroll ---
-        const backToTopBtn = document.getElementById('back-to-top-btn');
-        if (backToTopBtn) {
-            backToTopBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                if (window.lenis) {
-                    window.lenis.scrollTo(0, { duration: 1.2 });
-                } else {
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                }
-            });
-        }
-
         // --- Initialize GSAP Animations ---
         initAnimations();
 

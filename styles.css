@@ -1939,81 +1939,6 @@ body.splash-active {
 }
 
 /* ==========================================================================
-   FOOTER LEGAL & COPYRIGHT BAR
-   ========================================================================== */
-.footer-bottom-bar {
-    grid-column: 1 / -1;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 1rem;
-    margin-top: 3.5rem;
-    padding-top: 2rem;
-    border-top: 1px solid var(--border-color);
-    font-size: 0.85rem;
-    color: var(--grey-text);
-}
-
-.footer-copyright {
-    color: var(--grey-text);
-}
-
-.footer-legal-links {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-}
-
-.footer-legal-link {
-    color: var(--grey-text);
-    text-decoration: none;
-    transition: color 0.2s ease;
-}
-
-.footer-legal-link:hover {
-    color: var(--red-accent);
-}
-
-.dot-sep {
-    color: var(--border-color);
-}
-
-/* ==========================================================================
-   FLOATING ACTION BUTTON (QUICK CONNECT CTA)
-   ========================================================================== */
-.floating-cta-btn {
-    position: fixed;
-    bottom: 2rem;
-    right: 2rem;
-    z-index: 99;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 0.75rem 1.4rem;
-    background: var(--red-accent);
-    color: #ffffff;
-    border-radius: 50px;
-    text-decoration: none;
-    font-weight: 700;
-    font-size: 0.9rem;
-    box-shadow: 0 8px 25px rgba(244, 63, 94, 0.45);
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    backdrop-filter: blur(8px);
-}
-
-.floating-cta-btn:hover {
-    transform: translateY(-4px) scale(1.04);
-    box-shadow: 0 12px 30px rgba(244, 63, 94, 0.65);
-    color: #ffffff;
-}
-
-.floating-cta-icon {
-    font-size: 1.1rem;
-}
-
-/* ==========================================================================
    COOKIE CONSENT BANNER
    ========================================================================== */
 .cookie-banner {
@@ -2104,23 +2029,6 @@ body.splash-active {
         justify-content: center;
         padding: 0.6rem 0.8rem;
         font-size: 0.85rem;
-    }
-
-    .floating-cta-btn {
-        bottom: 1.25rem;
-        right: 1.25rem;
-        padding: 0.65rem 1.1rem;
-        font-size: 0.82rem;
-    }
-
-    .footer-bottom-bar {
-        flex-direction: column;
-        text-align: center;
-        gap: 0.75rem;
-    }
-
-    .footer-legal-links {
-        justify-content: center;
     }
 
     .cookie-inner {
