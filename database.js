@@ -82,18 +82,55 @@ db.serialize(() => {
     )`);
     db.run(`ALTER TABLE projects ADD COLUMN project_url TEXT`, (err) => {});
 
-    // 3. Skills/Services Table
+    // 3. Skills Table (with category: technical/soft, level, icon, description)
     db.run(`CREATE TABLE IF NOT EXISTS skills (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT,
+        category TEXT DEFAULT 'technical',
+        level TEXT,
+        icon TEXT,
+        description TEXT,
         price TEXT
     )`);
-    // Add price column if not exists
+    db.run(`ALTER TABLE skills ADD COLUMN category TEXT DEFAULT 'technical'`, (err) => {});
+    db.run(`ALTER TABLE skills ADD COLUMN level TEXT`, (err) => {});
+    db.run(`ALTER TABLE skills ADD COLUMN icon TEXT`, (err) => {});
+    db.run(`ALTER TABLE skills ADD COLUMN description TEXT`, (err) => {});
     db.run(`ALTER TABLE skills ADD COLUMN price TEXT`, (err) => {});
     db.get("SELECT COUNT(*) AS count FROM skills", (err, row) => {
         if (row && row.count === 0) {
-            const stmt = db.prepare("INSERT INTO skills (name, price) VALUES (?, ?)");
-            ["CANVA", "ADOBE PHOTOSHOP", "ADOBE ILLUSTRATOR", "GRAPHIC DESIGN", "CYBERSECURITY", "C / C++", "PYTHON", "CONTENT CREATION"].forEach(s => stmt.run(s, ''));
+            const stmt = db.prepare("INSERT INTO skills (name, category, level, icon, description, price) VALUES (?, ?, ?, ?, ?, ?)");
+            // Technical Skills
+            stmt.run("Python & C/C++", "technical", "85%", "🐍", "Scripting, Automation & Algorithms", "");
+            stmt.run("Ethical Hacking & Security", "technical", "80%", "🛡️", "Vulnerability Assessment & Network Auditing", "");
+            stmt.run("Graphic Design & UI/UX", "technical", "90%", "🎨", "Photoshop, Illustrator, Canva, Figma", "");
+            stmt.run("Web Development", "technical", "82%", "🌐", "HTML5, CSS3, JavaScript, Node.js, Express", "");
+            // Soft Skills
+            stmt.run("Problem Solving & Critical Thinking", "soft", "95%", "🧠", "Breaking down complex security & visual challenges", "");
+            stmt.run("Team Collaboration & Leadership", "soft", "90%", "🤝", "Leading projects and coordinating cross-functional teams", "");
+            stmt.run("Communication & Presentation", "soft", "88%", "💬", "Articulating technical and creative ideas clearly", "");
+            stmt.run("Adaptability & Fast Learning", "soft", "95%", "🚀", "Quickly learning emerging tech, tools, and AI workflows", "");
+            stmt.finalize();
+        }
+    });
+
+    // 3b. Experience Table
+    db.run(`CREATE TABLE IF NOT EXISTS experience (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        role TEXT,
+        company TEXT,
+        duration TEXT,
+        location TEXT,
+        badge TEXT,
+        description TEXT,
+        skills TEXT
+    )`);
+    db.get("SELECT COUNT(*) AS count FROM experience", (err, row) => {
+        if (row && row.count === 0) {
+            const stmt = db.prepare("INSERT INTO experience (role, company, duration, location, badge, description, skills) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            stmt.run("Cybersecurity Analyst Intern", "WSCUBE Tech / Training", "2023 - 2024", "Remote", "Internship", "Conducted network vulnerability assessments, monitored security events with Wireshark & Nmap, and explored incident mitigation frameworks.", "Wireshark, Metasploit, Nmap, Ethical Hacking, Linux");
+            stmt.run("Freelance Graphic Designer & UI Specialist", "Self-Employed", "2022 - Present", "Remote", "Freelance", "Created high-converting digital branding assets, poster designs, UI wireframes, and social media media kits for various clients.", "Adobe Photoshop, Illustrator, Canva, UI/UX, Typography");
+            stmt.run("Technical Lead & Developer", "Academic Projects & Hackathons", "2023 - Present", "Kanpur, India", "Projects", "Spearheaded design and frontend architecture for web platforms including Lost & Found system and personal dynamic portfolios.", "JavaScript, Node.js, HTML5/CSS3, Git, Problem Solving");
             stmt.finalize();
         }
     });

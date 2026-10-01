@@ -70,7 +70,8 @@
             <a href="#home" class="logo">RUDRA<span>.</span></a>
             <div class="nav-links" id="nav-links">
                 <a href="#home" class="nav-link">Home</a>
-                <a href="#services" class="nav-link">Services</a>
+                <a href="#skills" class="nav-link">Skills</a>
+                <a href="#experience" class="nav-link">Experience</a>
                 <a href="#portfolio" class="nav-link">Portfolio</a>
                 <a href="#about" class="nav-link">About</a>
                 <a href="#testimonials" class="nav-link">Testimonials</a>
@@ -128,14 +129,67 @@
             </div>
         </section>
 
-        <!-- Services Section -->
-        <section class="services" id="services">
-            <div class="section-header">
-                <h2>MY SERVICES</h2>
+        <!-- Skills Section with Two Tabs: Technical Skills & Soft Skills -->
+        <section class="skills-section" id="skills">
+            <div class="section-header skills-header">
+                <div>
+                    <h2>MY SKILLS & EXPERTISE</h2>
+                    <div class="section-tagline">CORE CAPABILITIES & COMPETENCIES</div>
+                </div>
+                <!-- Interactive Tabs: Soft Skills & Technical Skills -->
+                <div class="skills-tabs-wrap">
+                    <button class="skill-tab-pill active" data-tab="technical" id="tab-technical-btn">
+                        <span class="tab-icon">💻</span> Technical Skills
+                    </button>
+                    <button class="skill-tab-pill" data-tab="soft" id="tab-soft-btn">
+                        <span class="tab-icon">💡</span> Soft Skills
+                    </button>
+                </div>
             </div>
-            <div class="services-grid" id="services-grid">
-                <!-- Services loaded dynamically -->
+
+            <!-- Tab Content Pane: Technical Skills -->
+            <div class="skills-pane active" id="pane-technical">
+                <div class="skills-cards-grid" id="technical-skills-grid">
+                    <!-- Loaded dynamically -->
+                </div>
             </div>
+
+            <!-- Tab Content Pane: Soft Skills -->
+            <div class="skills-pane" id="pane-soft">
+                <div class="skills-cards-grid" id="soft-skills-grid">
+                    <!-- Loaded dynamically -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Work Experience Section in Interactive Slides -->
+        <section class="experience-section" id="experience">
+            <div class="section-header experience-header">
+                <div>
+                    <h2>WORK EXPERIENCE</h2>
+                    <div class="section-tagline">PROFESSIONAL ROLES, INTERNSHIPS & JOURNEY</div>
+                </div>
+                <!-- Slide Controls: Navigation Arrows & Indicator -->
+                <div class="slider-controls">
+                    <button class="slider-nav-btn prev-btn" id="exp-prev-btn" aria-label="Previous Experience Slide">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                    </button>
+                    <div class="slide-indicator" id="exp-slide-indicator">01 / 01</div>
+                    <button class="slider-nav-btn next-btn" id="exp-next-btn" aria-label="Next Experience Slide">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Slides Track Wrapper -->
+            <div class="experience-slider-container" id="exp-slider-container">
+                <div class="experience-slides-track" id="experience-track">
+                    <!-- Experience slide cards loaded dynamically -->
+                </div>
+            </div>
+
+            <!-- Pagination Dots -->
+            <div class="experience-dots" id="exp-dots-container"></div>
         </section>
 
         <section class="projects" id="portfolio">

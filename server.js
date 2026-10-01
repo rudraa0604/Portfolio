@@ -529,7 +529,7 @@ app.delete('/api/projects/:id', authenticateToken, async (req, res) => {
     }
 });
 
-// Skills endpoints
+// Skills endpoints (Technical & Soft Skills)
 app.get('/api/skills', async (req, res) => {
     try {
         const db = await connectMongo();
@@ -543,7 +543,15 @@ app.get('/api/skills', async (req, res) => {
 app.post('/api/skills', authenticateToken, async (req, res) => {
     try {
         const db = await connectMongo();
-        const result = await db.collection('skills').insertOne({ name: req.body.name, price: req.body.price });
+        const { name, category, level, icon, description, price } = req.body;
+        const result = await db.collection('skills').insertOne({
+            name: String(name || '').trim(),
+            category: category === 'soft' ? 'soft' : 'technical',
+            level: level || '',
+            icon: icon || '',
+            description: description || '',
+            price: price || ''
+        });
         res.json({ id: result.insertedId.toString() });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -553,7 +561,16 @@ app.post('/api/skills', authenticateToken, async (req, res) => {
 app.put('/api/skills/:id', authenticateToken, async (req, res) => {
     try {
         const db = await connectMongo();
-        await db.collection('skills').updateOne(parseIdQuery(req.params.id), { $set: { name: req.body.name, price: req.body.price } });
+        const { name, category, level, icon, description, price } = req.body;
+        const updateData = {
+            name: String(name || '').trim(),
+            category: category === 'soft' ? 'soft' : 'technical',
+            level: level || '',
+            icon: icon || '',
+            description: description || '',
+            price: price || ''
+        };
+        await db.collection('skills').updateOne(parseIdQuery(req.params.id), { $set: updateData });
         res.json({ message: "Skill updated successfully" });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -565,6 +582,67 @@ app.delete('/api/skills/:id', authenticateToken, async (req, res) => {
         const db = await connectMongo();
         await db.collection('skills').deleteOne(parseIdQuery(req.params.id));
         res.json({ message: "Skill deleted successfully" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Experience endpoints (Slides / Journey)
+app.get('/api/experience', async (req, res) => {
+    try {
+        const db = await connectMongo();
+        const rows = await db.collection('experience').find({}).toArray();
+        res.json(formatDocs(rows));
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/experience', authenticateToken, async (req, res) => {
+    try {
+        const db = await connectMongo();
+        const { role, company, duration, location, badge, description, skills } = req.body;
+        const result = await db.collection('experience').insertOne({
+            role: String(role || '').trim(),
+            company: String(company || '').trim(),
+            duration: String(duration || '').trim(),
+            location: String(location || '').trim(),
+            badge: String(badge || '').trim(),
+            description: String(description || '').trim(),
+            skills: String(skills || '').trim()
+        });
+        res.json({ id: result.insertedId.toString() });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/experience/:id', authenticateToken, async (req, res) => {
+    try {
+        const db = await connectMongo();
+        const { role, company, duration, location, badge, description, skills } = req.body;
+        await db.collection('experience').updateOne(parseIdQuery(req.params.id), {
+            $set: {
+                role: String(role || '').trim(),
+                company: String(company || '').trim(),
+                duration: String(duration || '').trim(),
+                location: String(location || '').trim(),
+                badge: String(badge || '').trim(),
+                description: String(description || '').trim(),
+                skills: String(skills || '').trim()
+            }
+        });
+        res.json({ message: "Experience updated successfully" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/experience/:id', authenticateToken, async (req, res) => {
+    try {
+        const db = await connectMongo();
+        await db.collection('experience').deleteOne(parseIdQuery(req.params.id));
+        res.json({ message: "Experience deleted successfully" });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -903,8 +981,90 @@ app.delete('/api/custom_content/:id', authenticateToken, async (req, res) => {
     }
 });
 
+// Seed Defaults for MongoDB Atlas
+async function seedDefaults(db) {
+    try {
+        // 1. Seed Skills if empty or categorize existing
+        const skillCount = await db.collection('skills').countDocuments();
+        if (skillCount === 0) {
+            const defaultSkills = [
+                // Technical Skills
+                { name: "Python & C/C++", category: "technical", level: "85%", icon: "🐍", description: "Scripting, Automation & Logic Building", price: "" },
+                { name: "Ethical Hacking & Security", category: "technical", level: "82%", icon: "🛡️", description: "Vulnerability Assessment, Nmap & Wireshark", price: "" },
+                { name: "Graphic Design & UI/UX", category: "technical", level: "90%", icon: "🎨", description: "Photoshop, Illustrator, Canva, Figma", price: "" },
+                { name: "Web Development", category: "technical", level: "85%", icon: "🌐", description: "HTML5, CSS3, JavaScript, Node.js, Express", price: "" },
+                { name: "Cybersecurity Operations", category: "technical", level: "80%", icon: "🔒", description: "SOAR, Threat Analysis, Identity Security", price: "" },
+                { name: "Content & Visual Storytelling", category: "technical", level: "88%", icon: "🎬", description: "Visual Identity, Brand Assets, Motion Graphics", price: "" },
+                // Soft Skills
+                { name: "Problem Solving & Analytical Thinking", category: "soft", level: "95%", icon: "🧠", description: "Breaking down complex security & design challenges", price: "" },
+                { name: "Team Collaboration & Leadership", category: "soft", level: "92%", icon: "🤝", description: "Coordinating and motivating cross-functional tech teams", price: "" },
+                { name: "Communication & Articulation", category: "soft", level: "88%", icon: "💬", description: "Articulating technical concepts to diverse audiences", price: "" },
+                { name: "Adaptability & Fast Learning", category: "soft", level: "95%", icon: "🚀", description: "Quickly mastering emerging tools, AI & frameworks", price: "" },
+                { name: "Time & Project Management", category: "soft", level: "90%", icon: "⏱️", description: "Balancing tight deadlines and multiple deliverables", price: "" },
+                { name: "Critical Thinking & Attention to Detail", category: "soft", level: "92%", icon: "🎯", description: "Ensuring pixel-perfection and airtight security", price: "" }
+            ];
+            await db.collection('skills').insertMany(defaultSkills);
+            console.log("Seeded default Technical & Soft Skills in MongoDB ✅");
+        } else {
+            // Ensure any existing skills have a category
+            await db.collection('skills').updateMany({ category: { $exists: false } }, { $set: { category: "technical" } });
+            // If there are no soft skills at all, add a few default soft skills
+            const softCount = await db.collection('skills').countDocuments({ category: "soft" });
+            if (softCount === 0) {
+                const defaultSoft = [
+                    { name: "Problem Solving & Analytical Thinking", category: "soft", level: "95%", icon: "🧠", description: "Breaking down complex security & design challenges", price: "" },
+                    { name: "Team Collaboration & Leadership", category: "soft", level: "92%", icon: "🤝", description: "Coordinating and motivating cross-functional tech teams", price: "" },
+                    { name: "Communication & Articulation", category: "soft", level: "88%", icon: "💬", description: "Articulating technical concepts to diverse audiences", price: "" },
+                    { name: "Adaptability & Fast Learning", category: "soft", level: "95%", icon: "🚀", description: "Quickly mastering emerging tools, AI & frameworks", price: "" }
+                ];
+                await db.collection('skills').insertMany(defaultSoft);
+                console.log("Added default Soft Skills to existing skills in MongoDB ✅");
+            }
+        }
+
+        // 2. Seed Experience if empty
+        const expCount = await db.collection('experience').countDocuments();
+        if (expCount === 0) {
+            const defaultExp = [
+                {
+                    role: "Cybersecurity Analyst Intern",
+                    company: "WSCUBE Tech / Tech Training",
+                    duration: "2023 - 2024",
+                    location: "Remote",
+                    badge: "Internship",
+                    description: "Conducted hands-on vulnerability assessments, packet sniffing, and network analysis. Worked on ethical hacking workflows, penetration testing fundamentals, and security protocols.",
+                    skills: "Wireshark, Metasploit, Nmap, Ethical Hacking, Linux"
+                },
+                {
+                    role: "Freelance Graphic Designer & Visual Artist",
+                    company: "Self-Employed / Independent",
+                    duration: "2022 - Present",
+                    location: "Remote",
+                    badge: "Freelance",
+                    description: "Created distinctive brand identities, event posters, marketing collateral, and digital illustrations. Delivered over 50+ client designs with high client satisfaction.",
+                    skills: "Adobe Photoshop, Illustrator, Canva, Typography, Visual Storytelling"
+                },
+                {
+                    role: "Technical Lead & Developer",
+                    company: "Academic & Hackathon Projects",
+                    duration: "2023 - Present",
+                    location: "Kanpur, UP",
+                    badge: "Projects",
+                    description: "Spearheaded frontend and system design for community and academic platforms including Lost & Found management system, interactive portfolios, and workshop toolkits.",
+                    skills: "JavaScript, Node.js, Express, MongoDB, UI/UX"
+                }
+            ];
+            await db.collection('experience').insertMany(defaultExp);
+            console.log("Seeded default Experience journey in MongoDB ✅");
+        }
+    } catch (e) {
+        console.error("Error in seedDefaults:", e.message);
+    }
+}
+
 // Start Server after connecting to MongoDB Atlas
-connectMongo().then(() => {
+connectMongo().then(async (db) => {
+    await seedDefaults(db);
     app.listen(PORT, () => {
         console.log(`Server running on http://localhost:${PORT}`);
     });

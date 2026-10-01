@@ -149,7 +149,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Loading Data ---
     const loadAllData = () => {
         loadProfile();
-        loadServices();
+        loadSkills();
+        loadExperience();
         loadEducation();
         loadProjects();
         loadAchievements();
@@ -440,78 +441,305 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- Services ---
-    const loadServices = async () => {
-        const res = await fetch('/api/skills');
-        const data = await res.json();
-        const list = document.getElementById('services-list');
+    // --- Skills Management (Technical & Soft Skills) ---
+    let allSkillsData = [];
+    let currentSkillFilter = 'all';
+
+    const renderSkillsList = () => {
+        const list = document.getElementById('skills-list');
+        if (!list) return;
         list.innerHTML = '';
-        data.forEach(item => {
+
+        const filtered = allSkillsData.filter(item => {
+            if (currentSkillFilter === 'all') return true;
+            const cat = item.category || 'technical';
+            return cat === currentSkillFilter;
+        });
+
+        if (filtered.length === 0) {
+            list.innerHTML = `<div style="text-align: center; color: var(--text-secondary); padding: 2rem; border: 1px dashed var(--border); border-radius: 8px;">No skills found in this category. Click "+ Add Skill" to add one!</div>`;
+            return;
+        }
+
+        filtered.forEach(item => {
             const div = document.createElement('div');
             div.className = 'item-row';
+            const isSoft = item.category === 'soft';
+            const catBadge = isSoft 
+                ? `<span style="background: rgba(236, 72, 153, 0.15); color: #f472b6; padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">💡 Soft Skill</span>`
+                : `<span style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">💻 Technical</span>`;
+            
+            const levelBadge = item.level ? `<span style="background: rgba(255, 255, 255, 0.08); color: var(--text-primary); padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">${item.level}</span>` : '';
+            const iconDisplay = item.icon ? `<span style="font-size: 1.25rem; margin-right: 0.4rem;">${item.icon}</span>` : '';
+
             div.innerHTML = `
                 <div class="item-info">
-                    <h4></h4>
-                    <p></p>
+                    <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.35rem;">
+                        <h4 style="margin: 0; display: flex; align-items: center;">${iconDisplay}${item.name}</h4>
+                        ${catBadge}
+                        ${levelBadge}
+                    </div>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem; margin: 0;">${item.description || item.price || 'No description'}</p>
                 </div>
                 <div class="item-actions">
                     <button type="button" class="btn edit-btn">Edit</button>
                     <button type="button" class="btn danger delete-btn">Delete</button>
                 </div>
             `;
-            div.querySelector('h4').textContent = item.name;
-            div.querySelector('p').textContent = item.price ? 'Price: ' + item.price : 'No price set';
-            div.querySelector('.edit-btn').addEventListener('click', () => editService(item.id, item.name, item.price || ''));
-            div.querySelector('.delete-btn').addEventListener('click', () => deleteService(item.id));
+            div.querySelector('.edit-btn').addEventListener('click', () => editSkill(item));
+            div.querySelector('.delete-btn').addEventListener('click', () => deleteSkill(item.id));
             list.appendChild(div);
         });
     };
 
-    window.editService = (id, name, price) => {
-        document.getElementById('service-id').value = id;
-        document.getElementById('service-name').value = name;
-        document.getElementById('service-price').value = price;
-        document.getElementById('service-form-card').style.display = 'block';
-        document.getElementById('service-form-title').textContent = 'Edit Service';
+    const loadSkills = async () => {
+        try {
+            const res = await fetch('/api/skills');
+            allSkillsData = await res.json();
+            renderSkillsList();
+        } catch (err) {
+            console.error('Error loading skills:', err);
+        }
     };
 
-    window.deleteService = async (id) => {
-        if (!confirm('Are you sure?')) return;
-        await fetch(`/api/skills/${id}`, { method: 'DELETE' });
-        showToast('Service deleted');
-        loadServices();
+    // Filter Button Handlers in Admin
+    const filterAllBtn = document.getElementById('admin-skill-filter-all');
+    const filterTechBtn = document.getElementById('admin-skill-filter-tech');
+    const filterSoftBtn = document.getElementById('admin-skill-filter-soft');
+
+    const updateAdminSkillFilterUI = (activeTab) => {
+        currentSkillFilter = activeTab;
+        const setStyle = (btn, active) => {
+            if (!btn) return;
+            if (active) {
+                btn.style.background = 'var(--accent)';
+                btn.style.color = '#fff';
+                btn.style.borderColor = 'var(--accent)';
+            } else {
+                btn.style.background = 'transparent';
+                btn.style.color = 'var(--text-secondary)';
+                btn.style.borderColor = 'var(--border)';
+            }
+        };
+        setStyle(filterAllBtn, activeTab === 'all');
+        setStyle(filterTechBtn, activeTab === 'technical');
+        setStyle(filterSoftBtn, activeTab === 'soft');
+        renderSkillsList();
     };
 
-    document.getElementById('add-service-btn').addEventListener('click', () => {
-        document.getElementById('service-form').reset();
-        document.getElementById('service-id').value = '';
-        document.getElementById('service-form-card').style.display = 'block';
-        document.getElementById('service-form-title').textContent = 'Add Service';
-    });
+    if (filterAllBtn) filterAllBtn.addEventListener('click', () => updateAdminSkillFilterUI('all'));
+    if (filterTechBtn) filterTechBtn.addEventListener('click', () => updateAdminSkillFilterUI('technical'));
+    if (filterSoftBtn) filterSoftBtn.addEventListener('click', () => updateAdminSkillFilterUI('soft'));
 
-    document.getElementById('cancel-service-btn').addEventListener('click', () => {
-        document.getElementById('service-form-card').style.display = 'none';
-    });
+    window.editSkill = (item) => {
+        document.getElementById('skill-id').value = item.id;
+        document.getElementById('skill-category').value = item.category || 'technical';
+        document.getElementById('skill-name').value = item.name || '';
+        document.getElementById('skill-level').value = item.level || '';
+        document.getElementById('skill-icon').value = item.icon || '';
+        document.getElementById('skill-desc').value = item.description || item.price || '';
+        document.getElementById('skill-form-card').style.display = 'block';
+        document.getElementById('skill-form-title').textContent = 'Edit Skill';
+        document.getElementById('skill-form-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    };
 
-    document.getElementById('service-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const id = document.getElementById('service-id').value;
-        const name = document.getElementById('service-name').value;
-        const price = document.getElementById('service-price').value;
+    window.deleteSkill = async (id) => {
+        if (!confirm('Are you sure you want to delete this skill?')) return;
+        try {
+            const res = await fetch(`/api/skills/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                showToast('Skill deleted successfully');
+                loadSkills();
+            } else {
+                showToast('Failed to delete skill', true);
+            }
+        } catch (e) {
+            showToast(e.message, true);
+        }
+    };
 
-        const url = id ? `/api/skills/${id}` : '/api/skills';
-        const method = id ? 'PUT' : 'POST';
-
-        await fetch(url, {
-            method,
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, price })
+    const addSkillBtn = document.getElementById('add-skill-btn');
+    if (addSkillBtn) {
+        addSkillBtn.addEventListener('click', () => {
+            document.getElementById('skill-form').reset();
+            document.getElementById('skill-id').value = '';
+            document.getElementById('skill-category').value = currentSkillFilter === 'soft' ? 'soft' : 'technical';
+            document.getElementById('skill-form-card').style.display = 'block';
+            document.getElementById('skill-form-title').textContent = 'Add Skill';
+            document.getElementById('skill-form-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         });
-        
-        showToast('Service saved');
-        document.getElementById('service-form-card').style.display = 'none';
-        loadServices();
-    });
+    }
+
+    const cancelSkillBtn = document.getElementById('cancel-skill-btn');
+    if (cancelSkillBtn) {
+        cancelSkillBtn.addEventListener('click', () => {
+            document.getElementById('skill-form-card').style.display = 'none';
+        });
+    }
+
+    const skillForm = document.getElementById('skill-form');
+    if (skillForm) {
+        skillForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('skill-id').value;
+            const category = document.getElementById('skill-category').value;
+            const name = document.getElementById('skill-name').value;
+            const level = document.getElementById('skill-level').value;
+            const icon = document.getElementById('skill-icon').value;
+            const description = document.getElementById('skill-desc').value;
+
+            const url = id ? `/api/skills/${id}` : '/api/skills';
+            const method = id ? 'PUT' : 'POST';
+
+            try {
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ category, name, level, icon, description })
+                });
+                if (res.ok) {
+                    showToast('Skill saved successfully');
+                    document.getElementById('skill-form-card').style.display = 'none';
+                    loadSkills();
+                } else {
+                    const data = await res.json();
+                    showToast(data.error || 'Failed to save skill', true);
+                }
+            } catch (err) {
+                showToast(err.message, true);
+            }
+        });
+    }
+
+    // --- Work Experience Management ---
+    const loadExperience = async () => {
+        try {
+            const res = await fetch('/api/experience');
+            const data = await res.json();
+            const list = document.getElementById('experience-list');
+            if (!list) return;
+            list.innerHTML = '';
+
+            if (data.length === 0) {
+                list.innerHTML = `<div style="text-align: center; color: var(--text-secondary); padding: 2rem; border: 1px dashed var(--border); border-radius: 8px;">No work experience entries yet. Click "+ Add Experience" to add one!</div>`;
+                return;
+            }
+
+            data.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'item-row';
+                const badgeHtml = item.badge ? `<span style="background: rgba(168, 85, 247, 0.15); color: #c084fc; padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; margin-left: 0.5rem;">${item.badge}</span>` : '';
+                const locationHtml = item.location ? ` | 📍 ${item.location}` : '';
+                const skillsHtml = item.skills ? `<div style="margin-top: 0.4rem; font-size: 0.8rem; color: var(--accent);">🛠️ ${item.skills}</div>` : '';
+
+                div.innerHTML = `
+                    <div class="item-info">
+                        <div style="display: flex; align-items: center; flex-wrap: wrap;">
+                            <h4 style="margin: 0;">${item.role}</h4>
+                            ${badgeHtml}
+                        </div>
+                        <p style="color: var(--text-primary); font-size: 0.9rem; margin: 0.25rem 0 0.1rem 0; font-weight: 500;">
+                            🏢 ${item.company} <span style="color: var(--text-secondary); font-weight: 400;">(${item.duration}${locationHtml})</span>
+                        </p>
+                        ${item.description ? `<p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.35rem; line-height: 1.4;">${item.description}</p>` : ''}
+                        ${skillsHtml}
+                    </div>
+                    <div class="item-actions">
+                        <button type="button" class="btn edit-btn">Edit</button>
+                        <button type="button" class="btn danger delete-btn">Delete</button>
+                    </div>
+                `;
+                div.querySelector('.edit-btn').addEventListener('click', () => editExperience(item));
+                div.querySelector('.delete-btn').addEventListener('click', () => deleteExperience(item.id));
+                list.appendChild(div);
+            });
+        } catch (err) {
+            console.error('Error loading experience:', err);
+        }
+    };
+
+    window.editExperience = (item) => {
+        document.getElementById('exp-id').value = item.id;
+        document.getElementById('exp-role').value = item.role || '';
+        document.getElementById('exp-company').value = item.company || '';
+        document.getElementById('exp-duration').value = item.duration || '';
+        document.getElementById('exp-location').value = item.location || '';
+        document.getElementById('exp-badge').value = item.badge || '';
+        document.getElementById('exp-skills').value = item.skills || '';
+        document.getElementById('exp-desc').value = item.description || '';
+        document.getElementById('experience-form-card').style.display = 'block';
+        document.getElementById('experience-form-title').textContent = 'Edit Experience';
+        document.getElementById('experience-form-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    };
+
+    window.deleteExperience = async (id) => {
+        if (!confirm('Are you sure you want to delete this experience entry?')) return;
+        try {
+            const res = await fetch(`/api/experience/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                showToast('Experience deleted successfully');
+                loadExperience();
+            } else {
+                showToast('Failed to delete experience', true);
+            }
+        } catch (e) {
+            showToast(e.message, true);
+        }
+    };
+
+    const addExpBtn = document.getElementById('add-experience-btn');
+    if (addExpBtn) {
+        addExpBtn.addEventListener('click', () => {
+            document.getElementById('experience-form').reset();
+            document.getElementById('exp-id').value = '';
+            document.getElementById('experience-form-card').style.display = 'block';
+            document.getElementById('experience-form-title').textContent = 'Add Experience';
+            document.getElementById('experience-form-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        });
+    }
+
+    const cancelExpBtn = document.getElementById('cancel-experience-btn');
+    if (cancelExpBtn) {
+        cancelExpBtn.addEventListener('click', () => {
+            document.getElementById('experience-form-card').style.display = 'none';
+        });
+    }
+
+    const expForm = document.getElementById('experience-form');
+    if (expForm) {
+        expForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('exp-id').value;
+            const role = document.getElementById('exp-role').value;
+            const company = document.getElementById('exp-company').value;
+            const duration = document.getElementById('exp-duration').value;
+            const location = document.getElementById('exp-location').value;
+            const badge = document.getElementById('exp-badge').value;
+            const skills = document.getElementById('exp-skills').value;
+            const description = document.getElementById('exp-desc').value;
+
+            const url = id ? `/api/experience/${id}` : '/api/experience';
+            const method = id ? 'PUT' : 'POST';
+
+            try {
+                const res = await fetch(url, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ role, company, duration, location, badge, skills, description })
+                });
+                if (res.ok) {
+                    showToast('Experience saved successfully');
+                    document.getElementById('experience-form-card').style.display = 'none';
+                    loadExperience();
+                } else {
+                    const data = await res.json();
+                    showToast(data.error || 'Failed to save experience', true);
+                }
+            } catch (err) {
+                showToast(err.message, true);
+            }
+        });
+    }
 
     // --- Education ---
     const loadEducation = async () => {

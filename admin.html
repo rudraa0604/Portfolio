@@ -39,7 +39,8 @@
             </div>
             <ul class="nav-links">
                 <li class="nav-item active" data-target="profile-section">👤 Profile & General</li>
-                <li class="nav-item" data-target="services-section">🛠️ Services</li>
+                <li class="nav-item" data-target="skills-section">⚡ Skills (Tech & Soft)</li>
+                <li class="nav-item" data-target="experience-section">💼 Work Experience</li>
                 <li class="nav-item" data-target="projects-section">📁 Portfolio Projects</li>
                 <li class="nav-item" data-target="education-section">🎓 Education</li>
                 <li class="nav-item" data-target="quote-section">💬 Quote Box</li>
@@ -151,31 +152,122 @@
                 </form>
             </section>
 
-            <!-- Services Section -->
-            <section id="services-section" class="section">
+            <!-- Skills Section (Technical & Soft Skills) -->
+            <section id="skills-section" class="section">
                 <div class="section-header">
-                    <h1>Services</h1>
-                    <button class="btn" id="add-service-btn" style="width: auto;">+ Add Service</button>
+                    <div>
+                        <h1>Skills Management</h1>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                            Add, update, or remove Technical Skills and Soft Skills. These appear in the dedicated tabs and animated slides on your portfolio.
+                        </p>
+                    </div>
+                    <button class="btn" id="add-skill-btn" style="width: auto;">+ Add Skill</button>
+                </div>
+
+                <!-- Category Filter Buttons in Admin -->
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                    <button type="button" class="btn" id="admin-skill-filter-all" style="width: auto; padding: 0.4rem 1.1rem; font-size: 0.85rem;">All Skills</button>
+                    <button type="button" class="btn" id="admin-skill-filter-tech" style="width: auto; padding: 0.4rem 1.1rem; font-size: 0.85rem; background: transparent; border: 1px solid var(--border); color: var(--text-secondary);">💻 Technical Skills</button>
+                    <button type="button" class="btn" id="admin-skill-filter-soft" style="width: auto; padding: 0.4rem 1.1rem; font-size: 0.85rem; background: transparent; border: 1px solid var(--border); color: var(--text-secondary);">💡 Soft Skills</button>
                 </div>
                 
-                <div class="card" id="service-form-card" style="display: none;">
-                    <h3 id="service-form-title">Add Service</h3>
-                    <form id="service-form">
-                        <input type="hidden" id="service-id">
+                <div class="card" id="skill-form-card" style="display: none;">
+                    <h3 id="skill-form-title">Add Skill</h3>
+                    <form id="skill-form">
+                        <input type="hidden" id="skill-id">
                         <div class="form-group">
-                            <label>Service Name</label>
-                            <input type="text" id="service-name" class="form-control" required>
+                            <label>Skill Category <span style="color: var(--accent);">*</span></label>
+                            <select id="skill-category" class="form-control" required style="cursor: pointer;">
+                                <option value="technical">💻 Technical Skill (e.g. Python, Ethical Hacking, Canva, UI/UX)</option>
+                                <option value="soft">💡 Soft Skill (e.g. Problem Solving, Leadership, Communication)</option>
+                            </select>
                         </div>
                         <div class="form-group">
-                            <label>Price / Rate</label>
-                            <input type="text" id="service-price" class="form-control">
+                            <label>Skill Name <span style="color: var(--accent);">*</span></label>
+                            <input type="text" id="skill-name" class="form-control" required placeholder="e.g. Python & C++, Problem Solving, Canva UI">
                         </div>
-                        <button type="submit" class="btn">Save Service</button>
-                        <button type="button" class="btn danger" id="cancel-service-btn" style="margin-top: 1rem;">Cancel</button>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div class="form-group">
+                                <label>Proficiency Level / % (Optional)</label>
+                                <input type="text" id="skill-level" class="form-control" placeholder="e.g. 90% or Advanced">
+                            </div>
+                            <div class="form-group">
+                                <label>Icon / Emoji (Optional)</label>
+                                <input type="text" id="skill-icon" class="form-control" placeholder="e.g. 🐍, 🛡️, 🎨, 🧠, 🤝, 🚀">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Short Description / Subtext (Optional)</label>
+                            <input type="text" id="skill-desc" class="form-control" placeholder="e.g. Scripting, Automation & Logic Building">
+                        </div>
+                        <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
+                            <button type="submit" class="btn" style="flex: 1;">Save Skill</button>
+                            <button type="button" class="btn danger" id="cancel-skill-btn" style="width: auto;">Cancel</button>
+                        </div>
                     </form>
                 </div>
 
-                <div class="item-list" id="services-list">
+                <div class="item-list" id="skills-list">
+                    <!-- Loaded dynamically -->
+                </div>
+            </section>
+
+            <!-- Work Experience Section -->
+            <section id="experience-section" class="section">
+                <div class="section-header">
+                    <div>
+                        <h1>Work Experience</h1>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                            Manage your work journey, internships, freelance roles, and leadership experience showcased in the animated slides.
+                        </p>
+                    </div>
+                    <button class="btn" id="add-experience-btn" style="width: auto;">+ Add Experience</button>
+                </div>
+                
+                <div class="card" id="experience-form-card" style="display: none;">
+                    <h3 id="experience-form-title">Add Experience</h3>
+                    <form id="experience-form">
+                        <input type="hidden" id="exp-id">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div class="form-group">
+                                <label>Role / Position <span style="color: var(--accent);">*</span></label>
+                                <input type="text" id="exp-role" class="form-control" required placeholder="e.g. Cybersecurity Analyst Intern">
+                            </div>
+                            <div class="form-group">
+                                <label>Company / Organization <span style="color: var(--accent);">*</span></label>
+                                <input type="text" id="exp-company" class="form-control" required placeholder="e.g. WSCUBE Tech / Self-Employed">
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                            <div class="form-group">
+                                <label>Duration / Period <span style="color: var(--accent);">*</span></label>
+                                <input type="text" id="exp-duration" class="form-control" required placeholder="e.g. 2023 - Present or 6 Months">
+                            </div>
+                            <div class="form-group">
+                                <label>Location / Mode</label>
+                                <input type="text" id="exp-location" class="form-control" placeholder="e.g. Remote / Kanpur, UP">
+                            </div>
+                            <div class="form-group">
+                                <label>Badge / Type</label>
+                                <input type="text" id="exp-badge" class="form-control" placeholder="e.g. Internship / Freelance / Full-Time">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Technologies / Skills Used</label>
+                            <input type="text" id="exp-skills" class="form-control" placeholder="e.g. Python, Wireshark, Metasploit, Figma, Linux">
+                        </div>
+                        <div class="form-group">
+                            <label>Key Responsibilities & Achievements</label>
+                            <textarea id="exp-desc" class="form-control" rows="3" placeholder="Describe what you worked on, milestones achieved, and technologies used..."></textarea>
+                        </div>
+                        <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
+                            <button type="submit" class="btn" style="flex: 1;">Save Experience</button>
+                            <button type="button" class="btn danger" id="cancel-experience-btn" style="width: auto;">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="item-list" id="experience-list">
                     <!-- Loaded dynamically -->
                 </div>
             </section>

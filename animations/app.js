@@ -106,9 +106,10 @@ document.addEventListener('DOMContentLoaded', () => {
         fetch('/api/education').then(r => r.json()),
         fetch('/api/certifications').then(r => r.json()),
         fetch('/api/skills').then(r => r.json()),
+        fetch('/api/experience').then(r => r.json()),
         fetch('/api/testimonials').then(r => r.json()),
         fetch('/api/settings').then(r => r.json())
-    ]).then(([profile, projects, stats, edu, certs, skills, testimonials, settings]) => {
+    ]).then(([profile, projects, stats, edu, certs, skills, experience, testimonials, settings]) => {
         
         // --- Apply Theme ---
         if (settings && settings.theme_name) {
@@ -430,6 +431,239 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 `;
             });
+        }
+
+        // --- Populate Skills (Technical & Soft Skills Tabs) ---
+        const techSkillsGrid = document.getElementById('technical-skills-grid');
+        const softSkillsGrid = document.getElementById('soft-skills-grid');
+
+        const renderSkillCard = (skill) => {
+            const icon = skill.icon || (skill.category === 'soft' ? '💡' : '⚡');
+            const levelText = skill.level || '';
+            let progressPercent = 85;
+            if (levelText.includes('%')) {
+                progressPercent = Math.min(100, Math.max(10, parseInt(levelText) || 85));
+            } else if (levelText.toLowerCase().includes('expert') || levelText.toLowerCase().includes('master')) {
+                progressPercent = 95;
+            } else if (levelText.toLowerCase().includes('adv')) {
+                progressPercent = 88;
+            } else if (levelText.toLowerCase().includes('inter')) {
+                progressPercent = 75;
+            } else if (levelText.toLowerCase().includes('beg')) {
+                progressPercent = 60;
+            }
+
+            const levelBadge = levelText ? `<div class="skill-level-chip">${levelText}</div>` : '';
+            const desc = skill.description || skill.price || '';
+
+            return `
+                <div class="skill-card">
+                    <div>
+                        <div class="skill-card-top">
+                            <div class="skill-icon-bubble">${icon}</div>
+                            ${levelBadge}
+                        </div>
+                        <h3 class="skill-card-title">${skill.name}</h3>
+                        ${desc ? `<p class="skill-card-desc">${desc}</p>` : ''}
+                    </div>
+                    <div class="skill-progress-wrap">
+                        <div class="skill-progress-bar" style="width: ${progressPercent}%;"></div>
+                    </div>
+                </div>
+            `;
+        };
+
+        if (techSkillsGrid && softSkillsGrid) {
+            techSkillsGrid.innerHTML = '';
+            softSkillsGrid.innerHTML = '';
+
+            const techSkills = (skills || []).filter(s => (s.category || 'technical') === 'technical');
+            const softSkills = (skills || []).filter(s => s.category === 'soft');
+
+            if (techSkills.length === 0) {
+                techSkillsGrid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: var(--grey-text); padding: 2.5rem; background: var(--card-bg); border-radius: 12px; border: 1px dashed var(--border-color);">No technical skills added yet. Add them in the admin panel!</div>`;
+            } else {
+                techSkills.forEach(s => techSkillsGrid.innerHTML += renderSkillCard(s));
+            }
+
+            if (softSkills.length === 0) {
+                softSkillsGrid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: var(--grey-text); padding: 2.5rem; background: var(--card-bg); border-radius: 12px; border: 1px dashed var(--border-color);">No soft skills added yet. Add them in the admin panel!</div>`;
+            } else {
+                softSkills.forEach(s => softSkillsGrid.innerHTML += renderSkillCard(s));
+            }
+
+            // Skills Tab Switching
+            const tabTechBtn = document.getElementById('tab-technical-btn');
+            const tabSoftBtn = document.getElementById('tab-soft-btn');
+            const paneTech = document.getElementById('pane-technical');
+            const paneSoft = document.getElementById('pane-soft');
+
+            const switchSkillTab = (targetTab) => {
+                if (targetTab === 'technical') {
+                    if (tabTechBtn) tabTechBtn.classList.add('active');
+                    if (tabSoftBtn) tabSoftBtn.classList.remove('active');
+                    if (paneTech) paneTech.classList.add('active');
+                    if (paneSoft) paneSoft.classList.remove('active');
+                } else {
+                    if (tabSoftBtn) tabSoftBtn.classList.add('active');
+                    if (tabTechBtn) tabTechBtn.classList.remove('active');
+                    if (paneSoft) paneSoft.classList.add('active');
+                    if (paneTech) paneTech.classList.remove('active');
+                }
+            };
+
+            if (tabTechBtn) tabTechBtn.addEventListener('click', () => switchSkillTab('technical'));
+            if (tabSoftBtn) tabSoftBtn.addEventListener('click', () => switchSkillTab('soft'));
+        }
+
+        // --- Populate Experience Slider (Slides) ---
+        const expTrack = document.getElementById('experience-track');
+        const expPrevBtn = document.getElementById('exp-prev-btn');
+        const expNextBtn = document.getElementById('exp-next-btn');
+        const expIndicator = document.getElementById('exp-slide-indicator');
+        const expDotsContainer = document.getElementById('exp-dots-container');
+
+        if (expTrack) {
+            expTrack.innerHTML = '';
+            const expList = experience && experience.length > 0 ? experience : [];
+
+            if (expList.length === 0) {
+                expTrack.innerHTML = `<div style="text-align: center; color: var(--grey-text); padding: 2.5rem; width: 100%; background: var(--card-bg); border-radius: 14px; border: 1px dashed var(--border-color);">No experience added yet. Add your journey in the admin panel!</div>`;
+            } else {
+                expList.forEach(item => {
+                    const badgeHtml = item.badge ? `<div class="exp-card-badge-pill">${item.badge}</div>` : '';
+                    const duration = item.duration || '';
+                    const loc = item.location ? ` • ${item.location}` : '';
+                    const skillsTags = item.skills 
+                        ? item.skills.split(',').map(tag => tag.trim() ? `<span class="exp-skill-tag">${tag.trim()}</span>` : '').join('')
+                        : '';
+
+                    expTrack.innerHTML += `
+                        <div class="experience-slide">
+                            <div class="experience-card">
+                                <div>
+                                    <div class="exp-card-header">
+                                        <div>
+                                            ${badgeHtml}
+                                            <h3 class="exp-card-role">${item.role}</h3>
+                                            <div class="exp-card-company">
+                                                <span>🏢</span> ${item.company}
+                                            </div>
+                                        </div>
+                                        ${duration ? `<div class="exp-card-duration-badge">📅 ${duration}${loc}</div>` : ''}
+                                    </div>
+                                    ${item.description ? `<p class="exp-card-desc">${item.description}</p>` : ''}
+                                </div>
+                                ${skillsTags ? `<div class="exp-card-skills">${skillsTags}</div>` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                // Slider state & update logic
+                let currentSlide = 0;
+                const getVisibleSlides = () => window.innerWidth >= 900 ? 2 : 1;
+                const totalItems = expList.length;
+
+                const updateSlider = () => {
+                    const visible = getVisibleSlides();
+                    const maxSlide = Math.max(0, totalItems - visible);
+                    if (currentSlide > maxSlide) currentSlide = maxSlide;
+                    if (currentSlide < 0) currentSlide = 0;
+
+                    const slideEl = expTrack.querySelector('.experience-slide');
+                    const slideWidth = slideEl ? slideEl.getBoundingClientRect().width : 0;
+                    const gap = 24;
+                    const offset = currentSlide * (slideWidth + gap);
+                    expTrack.style.transform = `translateX(-${offset}px)`;
+
+                    // Indicator counter
+                    if (expIndicator) {
+                        const currentNum = (currentSlide + 1).toString().padStart(2, '0');
+                        const totalNum = Math.max(1, maxSlide + 1).toString().padStart(2, '0');
+                        expIndicator.textContent = `${currentNum} / ${totalNum}`;
+                    }
+
+                    // Dots update
+                    if (expDotsContainer) {
+                        const dots = expDotsContainer.querySelectorAll('.exp-dot');
+                        dots.forEach((dot, idx) => {
+                            if (idx === currentSlide) dot.classList.add('active');
+                            else dot.classList.remove('active');
+                        });
+                    }
+                };
+
+                const renderDots = () => {
+                    if (!expDotsContainer) return;
+                    expDotsContainer.innerHTML = '';
+                    const visible = getVisibleSlides();
+                    const totalDots = Math.max(1, totalItems - visible + 1);
+
+                    for (let i = 0; i < totalDots; i++) {
+                        const dot = document.createElement('button');
+                        dot.className = `exp-dot ${i === currentSlide ? 'active' : ''}`;
+                        dot.setAttribute('aria-label', `Go to slide ${i + 1}`);
+                        dot.addEventListener('click', () => {
+                            currentSlide = i;
+                            updateSlider();
+                        });
+                        expDotsContainer.appendChild(dot);
+                    }
+                };
+
+                if (expPrevBtn) {
+                    expPrevBtn.addEventListener('click', () => {
+                        const visible = getVisibleSlides();
+                        const maxSlide = Math.max(0, totalItems - visible);
+                        currentSlide = (currentSlide - 1 + (maxSlide + 1)) % (maxSlide + 1);
+                        updateSlider();
+                    });
+                }
+
+                if (expNextBtn) {
+                    expNextBtn.addEventListener('click', () => {
+                        const visible = getVisibleSlides();
+                        const maxSlide = Math.max(0, totalItems - visible);
+                        currentSlide = (currentSlide + 1) % (maxSlide + 1);
+                        updateSlider();
+                    });
+                }
+
+                // Touch swipe / drag support
+                let touchStartX = 0;
+                let touchEndX = 0;
+                const sliderContainer = document.getElementById('exp-slider-container');
+                if (sliderContainer) {
+                    sliderContainer.addEventListener('touchstart', (e) => {
+                        touchStartX = e.changedTouches[0].screenX;
+                    }, { passive: true });
+
+                    sliderContainer.addEventListener('touchend', (e) => {
+                        touchEndX = e.changedTouches[0].screenX;
+                        const diff = touchStartX - touchEndX;
+                        if (Math.abs(diff) > 45) {
+                            const visible = getVisibleSlides();
+                            const maxSlide = Math.max(0, totalItems - visible);
+                            if (diff > 0 && currentSlide < maxSlide) {
+                                currentSlide++;
+                                updateSlider();
+                            } else if (diff < 0 && currentSlide > 0) {
+                                currentSlide--;
+                                updateSlider();
+                            }
+                        }
+                    }, { passive: true });
+                }
+
+                window.addEventListener('resize', () => {
+                    renderDots();
+                    updateSlider();
+                });
+
+                renderDots();
+                updateSlider();
+            }
         }
 
         const skillCont = document.getElementById('marquee-content');

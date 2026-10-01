@@ -431,13 +431,26 @@ document.addEventListener('DOMContentLoaded', () => {
             .catch(err => console.error(`Error fetching ${endpoint}:`, err));
     };
 
-    // 2. Services
-    fetchAndRender('/api/skills', 'services-grid', (s) => `
-        <div class="project-card" style="padding: 2rem; background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 8px;">
-            <h3 style="color: var(--red-accent); margin-bottom: 1rem;">${s.name}</h3>
-            <p style="color: var(--grey-text);">${s.price || 'Contact for pricing'}</p>
-        </div>
-    `);
+    // 2. Skills & Experience
+    fetch('/api/skills')
+        .then(r => r.json())
+        .then(skills => {
+            const techGrid = document.getElementById('technical-skills-grid');
+            const softGrid = document.getElementById('soft-skills-grid');
+            if (techGrid && softGrid) {
+                techGrid.innerHTML = '';
+                softGrid.innerHTML = '';
+                const techSkills = (skills || []).filter(s => (s.category || 'technical') === 'technical');
+                const softSkills = (skills || []).filter(s => s.category === 'soft');
+                
+                techSkills.forEach(s => {
+                    techGrid.innerHTML += `<div class="skill-card"><h3 class="skill-card-title">${s.name}</h3><p class="skill-card-desc">${s.description || ''}</p></div>`;
+                });
+                softSkills.forEach(s => {
+                    softGrid.innerHTML += `<div class="skill-card"><h3 class="skill-card-title">${s.name}</h3><p class="skill-card-desc">${s.description || ''}</p></div>`;
+                });
+            }
+        }).catch(() => {});
 
     // 3. Projects
     fetchAndRender('/api/projects', 'project-grid', (p, index) => {
