@@ -450,28 +450,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (softCountBadge) softCountBadge.textContent = `${softSkills.length} SKILLS`;
                 
                 techSkills.forEach(s => {
-                    const sub = s.description || 'TECHNICAL TOOL';
+                    const icon = (s.icon || '').trim() ? `<span class="skill-emoji-icon">${s.icon}</span>` : `<span class="skill-emoji-icon">⚡</span>`;
                     techGrid.innerHTML += `
                         <div class="competency-skill-item">
-                            <div class="skill-item-icon">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
-                            </div>
+                            <div class="skill-item-icon">${icon}</div>
                             <div class="skill-item-text">
                                 <span class="skill-item-name">${s.name}</span>
-                                <span class="skill-item-sub">${sub}</span>
                             </div>
                         </div>`;
                 });
                 softSkills.forEach(s => {
-                    const sub = s.description || 'CORE COMPETENCY';
+                    const icon = (s.icon || '').trim() ? `<span class="skill-emoji-icon">${s.icon}</span>` : `<span class="skill-emoji-icon">💡</span>`;
                     softGrid.innerHTML += `
                         <div class="competency-skill-item">
-                            <div class="skill-item-icon">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-2.04z"></path><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-2.04z"></path></svg>
-                            </div>
+                            <div class="skill-item-icon">${icon}</div>
                             <div class="skill-item-text">
                                 <span class="skill-item-name">${s.name}</span>
-                                <span class="skill-item-sub">${sub}</span>
                             </div>
                         </div>`;
                 });

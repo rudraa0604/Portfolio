@@ -440,61 +440,67 @@ document.addEventListener('DOMContentLoaded', () => {
         const softCountBadge = document.getElementById('soft-skills-count');
 
         const getSkillIconSvg = (skill) => {
-            const name = (skill.name || '').toLowerCase();
-            const rawIcon = skill.icon || '';
-
-            if (name.includes('python')) {
-                return `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M11.91 2c-5.06 0-4.74 2.19-4.74 2.19l.01 2.27h4.82v.69H5.16S2 6.79 2 11.93c0 5.14 2.76 4.96 2.76 4.96h1.65v-2.31s-.09-2.76 2.71-2.76h4.67s2.58.04 2.58-2.54V4.54S16.98 2 11.91 2zm-2.6 1.48a.95.95 0 1 1 0 1.9.95.95 0 0 1 0-1.9zm2.78 18.52c5.06 0 4.74-2.19 4.74-2.19l-.01-2.27H12v-.69h6.84S22 17.21 22 12.07c0-5.14-2.76-4.96-2.76-4.96h-1.65v2.31s.09 2.76-2.71 2.76H10.2s-2.58-.04-2.58 2.54v4.74s-.61 2.54 4.47 2.54zm2.6-1.48a.95.95 0 1 1 0-1.9.95.95 0 0 1 0 1.9z"/></svg>`;
+            const rawIcon = (skill.icon || '').trim();
+            if (rawIcon) {
+                return `<span class="skill-emoji-icon">${rawIcon}</span>`;
             }
-            if (name.includes('ai') || name.includes('vibe') || name.includes('prompt') || name.includes('gpt')) {
-                return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path><path d="M5 3v4"></path><path d="M19 17v4"></path></svg>`;
+
+            const name = (skill.name || '').toLowerCase();
+
+            if (name.includes('canva') || name.includes('photoshop') || name.includes('illustrator') || name.includes('design') || name.includes('figma')) {
+                return `<span class="skill-emoji-icon">🎨</span>`;
+            }
+            if (name.includes('python')) {
+                return `<span class="skill-emoji-icon">🐍</span>`;
+            }
+            if (name.includes('c/c++') || name.includes('c++') || name.includes(' c ')) {
+                return `<span class="skill-emoji-icon">⚡</span>`;
+            }
+            if (name.includes('claude') || name.includes('ai') || name.includes('vibe') || name.includes('prompt') || name.includes('gpt') || name.includes('bot')) {
+                return `<span class="skill-emoji-icon">🤖</span>`;
+            }
+            if (name.includes('content') || name.includes('video') || name.includes('media')) {
+                return `<span class="skill-emoji-icon">🎬</span>`;
             }
             if (name.includes('git') || name.includes('github')) {
-                return `<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>`;
+                return `<span class="skill-emoji-icon">🐙</span>`;
             }
-            if (name.includes('power bi') || name.includes('tableau') || name.includes('analytics') || name.includes('data')) {
-                return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>`;
+            if (name.includes('cyber') || name.includes('security') || name.includes('hack') || name.includes('nmap') || name.includes('wireshark')) {
+                return `<span class="skill-emoji-icon">🛡️</span>`;
             }
-            if (name.includes('html') || name.includes('css') || name.includes('javascript') || name.includes('js') || name.includes('web')) {
-                return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line><path d="m14 9 3 3-3 3"></path></svg>`;
+            if (name.includes('power bi') || name.includes('data') || name.includes('finance') || name.includes('analytics')) {
+                return `<span class="skill-emoji-icon">📊</span>`;
             }
-            if (name.includes('security') || name.includes('hack') || name.includes('cyber') || name.includes('nmap') || name.includes('wireshark')) {
-                return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>`;
-            }
-            if (name.includes('design') || name.includes('photoshop') || name.includes('illustrator') || name.includes('ui') || name.includes('figma')) {
-                return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"></circle><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"></circle><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"></circle><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"></circle><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.5 17.5 2 12 2z"></path></svg>`;
-            }
-            if (name.includes('communication') || name.includes('articulation') || name.includes('presentation')) {
-                return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path><line x1="8" y1="10" x2="16" y2="10"></line><line x1="8" y1="14" x2="12" y2="14"></line></svg>`;
-            }
-            if (name.includes('team') || name.includes('collaboration')) {
-                return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>`;
-            }
-            if (name.includes('leader') || name.includes('management')) {
-                return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"></path></svg>`;
-            }
-            if (name.includes('time') || name.includes('project') || name.includes('planning')) {
-                return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`;
-            }
-            if (name.includes('quick') || name.includes('learning') || name.includes('adapt') || name.includes('fast')) {
-                return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>`;
+            if (name.includes('web') || name.includes('html') || name.includes('css') || name.includes('javascript') || name.includes('it consultancy')) {
+                return `<span class="skill-emoji-icon">🌐</span>`;
             }
             if (name.includes('problem') || name.includes('critical') || name.includes('thinking')) {
-                return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-2.04z"></path><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-2.04z"></path></svg>`;
+                return `<span class="skill-emoji-icon">🧠</span>`;
+            }
+            if (name.includes('team') || name.includes('collaboration')) {
+                return `<span class="skill-emoji-icon">👥</span>`;
+            }
+            if (name.includes('communication') || name.includes('articulation') || name.includes('presentation')) {
+                return `<span class="skill-emoji-icon">💬</span>`;
+            }
+            if (name.includes('adapt') || name.includes('quick') || name.includes('continuous') || name.includes('learning')) {
+                return `<span class="skill-emoji-icon">⚡</span>`;
+            }
+            if (name.includes('leader') || name.includes('management') || name.includes('ownership')) {
+                return `<span class="skill-emoji-icon">👑</span>`;
+            }
+            if (name.includes('time') || name.includes('project')) {
+                return `<span class="skill-emoji-icon">⏰</span>`;
+            }
+            if (name.includes('detail') || name.includes('perfection')) {
+                return `<span class="skill-emoji-icon">🎯</span>`;
             }
 
-            if (rawIcon && rawIcon.length <= 4) {
-                return `<span>${rawIcon}</span>`;
-            }
-
-            return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`;
+            return `<span class="skill-emoji-icon">✨</span>`;
         };
 
         const renderCompetencySkillCard = (skill) => {
             const iconSvg = getSkillIconSvg(skill);
-            const isSoft = skill.category === 'soft';
-            const defaultSub = isSoft ? 'CORE COMPETENCY' : 'TECHNICAL TOOL';
-            const subLabel = (skill.description && skill.description.length <= 25) ? skill.description : defaultSub;
 
             return `
                 <div class="competency-skill-item">
@@ -503,7 +509,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     <div class="skill-item-text">
                         <span class="skill-item-name">${skill.name}</span>
-                        <span class="skill-item-sub">${subLabel}</span>
                     </div>
                 </div>
             `;
