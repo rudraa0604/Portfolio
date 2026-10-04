@@ -184,22 +184,19 @@
                         </div>
                         <div class="form-group">
                             <label>Skill Name <span style="color: var(--accent);">*</span></label>
-                            <input type="text" id="skill-name" class="form-control" required placeholder="e.g. Python & C++, Problem Solving, Canva UI">
+                            <input type="text" id="skill-name" class="form-control" required placeholder="e.g. PYTHON, CANVA, COMMUNICATION">
                         </div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                             <div class="form-group">
-                                <label>Proficiency Level / % (Optional)</label>
-                                <input type="text" id="skill-level" class="form-control" placeholder="e.g. 90% or Advanced">
+                                <label>Sub-Label / Type (Optional)</label>
+                                <input type="text" id="skill-desc" class="form-control" placeholder="e.g. TECHNICAL TOOL or CORE COMPETENCY">
                             </div>
                             <div class="form-group">
                                 <label>Icon / Emoji (Optional)</label>
-                                <input type="text" id="skill-icon" class="form-control" placeholder="e.g. 🐍, 🛡️, 🎨, 🧠, 🤝, 🚀">
+                                <input type="text" id="skill-icon" class="form-control" placeholder="e.g. 🐍, 🎨, 📊, 💬, 👑">
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label>Short Description / Subtext (Optional)</label>
-                            <input type="text" id="skill-desc" class="form-control" placeholder="e.g. Scripting, Automation & Logic Building">
-                        </div>
+                        <input type="hidden" id="skill-level" value="">
                         <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
                             <button type="submit" class="btn" style="flex: 1;">Save Skill</button>
                             <button type="button" class="btn danger" id="cancel-skill-btn" style="width: auto;">Cancel</button>

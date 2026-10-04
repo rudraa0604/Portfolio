@@ -469,17 +469,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 ? `<span style="background: rgba(236, 72, 153, 0.15); color: #f472b6; padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">💡 Soft Skill</span>`
                 : `<span style="background: rgba(59, 130, 246, 0.15); color: #60a5fa; padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">💻 Technical</span>`;
             
-            const levelBadge = item.level ? `<span style="background: rgba(255, 255, 255, 0.08); color: var(--text-primary); padding: 2px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600;">${item.level}</span>` : '';
             const iconDisplay = item.icon ? `<span style="font-size: 1.25rem; margin-right: 0.4rem;">${item.icon}</span>` : '';
+            const subText = item.description || (isSoft ? 'CORE COMPETENCY' : 'TECHNICAL TOOL');
 
             div.innerHTML = `
                 <div class="item-info">
                     <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.35rem;">
                         <h4 style="margin: 0; display: flex; align-items: center;">${iconDisplay}${item.name}</h4>
                         ${catBadge}
-                        ${levelBadge}
                     </div>
-                    <p style="color: var(--text-secondary); font-size: 0.85rem; margin: 0;">${item.description || item.price || 'No description'}</p>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem; margin: 0; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">${subText}</p>
                 </div>
                 <div class="item-actions">
                     <button type="button" class="btn edit-btn">Edit</button>
@@ -535,9 +534,10 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('skill-id').value = item.id;
         document.getElementById('skill-category').value = item.category || 'technical';
         document.getElementById('skill-name').value = item.name || '';
-        document.getElementById('skill-level').value = item.level || '';
         document.getElementById('skill-icon').value = item.icon || '';
-        document.getElementById('skill-desc').value = item.description || item.price || '';
+        document.getElementById('skill-desc').value = item.description || (item.category === 'soft' ? 'CORE COMPETENCY' : 'TECHNICAL TOOL');
+        const levelInput = document.getElementById('skill-level');
+        if (levelInput) levelInput.value = '';
         document.getElementById('skill-form-card').style.display = 'block';
         document.getElementById('skill-form-title').textContent = 'Edit Skill';
         document.getElementById('skill-form-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -564,6 +564,10 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('skill-form').reset();
             document.getElementById('skill-id').value = '';
             document.getElementById('skill-category').value = currentSkillFilter === 'soft' ? 'soft' : 'technical';
+            const defaultSub = currentSkillFilter === 'soft' ? 'CORE COMPETENCY' : 'TECHNICAL TOOL';
+            document.getElementById('skill-desc').value = defaultSub;
+            const levelInput = document.getElementById('skill-level');
+            if (levelInput) levelInput.value = '';
             document.getElementById('skill-form-card').style.display = 'block';
             document.getElementById('skill-form-title').textContent = 'Add Skill';
             document.getElementById('skill-form-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -584,7 +588,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const id = document.getElementById('skill-id').value;
             const category = document.getElementById('skill-category').value;
             const name = document.getElementById('skill-name').value;
-            const level = document.getElementById('skill-level').value;
+            const level = '';
             const icon = document.getElementById('skill-icon').value;
             const description = document.getElementById('skill-desc').value;
 

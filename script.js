@@ -437,17 +437,43 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(skills => {
             const techGrid = document.getElementById('technical-skills-grid');
             const softGrid = document.getElementById('soft-skills-grid');
+            const techCountBadge = document.getElementById('tech-skills-count');
+            const softCountBadge = document.getElementById('soft-skills-count');
+
             if (techGrid && softGrid) {
                 techGrid.innerHTML = '';
                 softGrid.innerHTML = '';
                 const techSkills = (skills || []).filter(s => (s.category || 'technical') === 'technical');
                 const softSkills = (skills || []).filter(s => s.category === 'soft');
+
+                if (techCountBadge) techCountBadge.textContent = `${techSkills.length} SKILLS`;
+                if (softCountBadge) softCountBadge.textContent = `${softSkills.length} SKILLS`;
                 
                 techSkills.forEach(s => {
-                    techGrid.innerHTML += `<div class="skill-card"><h3 class="skill-card-title">${s.name}</h3><p class="skill-card-desc">${s.description || ''}</p></div>`;
+                    const sub = s.description || 'TECHNICAL TOOL';
+                    techGrid.innerHTML += `
+                        <div class="competency-skill-item">
+                            <div class="skill-item-icon">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                            </div>
+                            <div class="skill-item-text">
+                                <span class="skill-item-name">${s.name}</span>
+                                <span class="skill-item-sub">${sub}</span>
+                            </div>
+                        </div>`;
                 });
                 softSkills.forEach(s => {
-                    softGrid.innerHTML += `<div class="skill-card"><h3 class="skill-card-title">${s.name}</h3><p class="skill-card-desc">${s.description || ''}</p></div>`;
+                    const sub = s.description || 'CORE COMPETENCY';
+                    softGrid.innerHTML += `
+                        <div class="competency-skill-item">
+                            <div class="skill-item-icon">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 4.44-2.04z"></path><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-4.44-2.04z"></path></svg>
+                            </div>
+                            <div class="skill-item-text">
+                                <span class="skill-item-name">${s.name}</span>
+                                <span class="skill-item-sub">${sub}</span>
+                            </div>
+                        </div>`;
                 });
             }
         }).catch(() => {});

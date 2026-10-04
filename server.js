@@ -1017,19 +1017,17 @@ async function seedDefaults(db) {
         if (skillCount === 0) {
             const defaultSkills = [
                 // Technical Skills
-                { name: "Python & C/C++", category: "technical", level: "85%", icon: "🐍", description: "Scripting, Automation & Logic Building", price: "" },
-                { name: "Ethical Hacking & Security", category: "technical", level: "82%", icon: "🛡️", description: "Vulnerability Assessment, Nmap & Wireshark", price: "" },
-                { name: "Graphic Design & UI/UX", category: "technical", level: "90%", icon: "🎨", description: "Photoshop, Illustrator, Canva, Figma", price: "" },
-                { name: "Web Development", category: "technical", level: "85%", icon: "🌐", description: "HTML5, CSS3, JavaScript, Node.js, Express", price: "" },
-                { name: "Cybersecurity Operations", category: "technical", level: "80%", icon: "🔒", description: "SOAR, Threat Analysis, Identity Security", price: "" },
-                { name: "Content & Visual Storytelling", category: "technical", level: "88%", icon: "🎬", description: "Visual Identity, Brand Assets, Motion Graphics", price: "" },
+                { name: "PYTHON", category: "technical", level: "", icon: "🐍", description: "TECHNICAL TOOL", price: "" },
+                { name: "AI – ASSISTED DEVELOPMENT (VIBE CODING)", category: "technical", level: "", icon: "✨", description: "TECHNICAL TOOL", price: "" },
+                { name: "GIT/GITHUB", category: "technical", level: "", icon: "🐙", description: "TECHNICAL TOOL", price: "" },
+                { name: "POWER BI", category: "technical", level: "", icon: "📊", description: "TECHNICAL TOOL", price: "" },
+                { name: "HTML/CSS/JAVASCRIPT", category: "technical", level: "", icon: "🌐", description: "TECHNICAL TOOL", price: "" },
                 // Soft Skills
-                { name: "Problem Solving & Analytical Thinking", category: "soft", level: "95%", icon: "🧠", description: "Breaking down complex security & design challenges", price: "" },
-                { name: "Team Collaboration & Leadership", category: "soft", level: "92%", icon: "🤝", description: "Coordinating and motivating cross-functional tech teams", price: "" },
-                { name: "Communication & Articulation", category: "soft", level: "88%", icon: "💬", description: "Articulating technical concepts to diverse audiences", price: "" },
-                { name: "Adaptability & Fast Learning", category: "soft", level: "95%", icon: "🚀", description: "Quickly mastering emerging tools, AI & frameworks", price: "" },
-                { name: "Time & Project Management", category: "soft", level: "90%", icon: "⏱️", description: "Balancing tight deadlines and multiple deliverables", price: "" },
-                { name: "Critical Thinking & Attention to Detail", category: "soft", level: "92%", icon: "🎯", description: "Ensuring pixel-perfection and airtight security", price: "" }
+                { name: "COMMUNICATION", category: "soft", level: "", icon: "💬", description: "CORE COMPETENCY", price: "" },
+                { name: "TEAMWORK", category: "soft", level: "", icon: "👥", description: "CORE COMPETENCY", price: "" },
+                { name: "LEADERSHIP", category: "soft", level: "", icon: "👑", description: "CORE COMPETENCY", price: "" },
+                { name: "TIME MANAGEMENT", category: "soft", level: "", icon: "⏰", description: "CORE COMPETENCY", price: "" },
+                { name: "QUICK LEARNING", category: "soft", level: "", icon: "⚡", description: "CORE COMPETENCY", price: "" }
             ];
             await db.collection('skills').insertMany(defaultSkills);
             console.log("Seeded default Technical & Soft Skills in MongoDB ✅");

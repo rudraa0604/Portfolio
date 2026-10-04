@@ -99,17 +99,18 @@ db.serialize(() => {
     db.run(`ALTER TABLE skills ADD COLUMN price TEXT`, (err) => {});
     db.get("SELECT COUNT(*) AS count FROM skills", (err, row) => {
         if (row && row.count === 0) {
-            const stmt = db.prepare("INSERT INTO skills (name, category, level, icon, description, price) VALUES (?, ?, ?, ?, ?, ?)");
             // Technical Skills
-            stmt.run("Python & C/C++", "technical", "85%", "🐍", "Scripting, Automation & Algorithms", "");
-            stmt.run("Ethical Hacking & Security", "technical", "80%", "🛡️", "Vulnerability Assessment & Network Auditing", "");
-            stmt.run("Graphic Design & UI/UX", "technical", "90%", "🎨", "Photoshop, Illustrator, Canva, Figma", "");
-            stmt.run("Web Development", "technical", "82%", "🌐", "HTML5, CSS3, JavaScript, Node.js, Express", "");
+            stmt.run("PYTHON", "technical", "", "🐍", "TECHNICAL TOOL", "");
+            stmt.run("AI – ASSISTED DEVELOPMENT (VIBE CODING)", "technical", "", "✨", "TECHNICAL TOOL", "");
+            stmt.run("GIT/GITHUB", "technical", "", "🐙", "TECHNICAL TOOL", "");
+            stmt.run("POWER BI", "technical", "", "📊", "TECHNICAL TOOL", "");
+            stmt.run("HTML/CSS/JAVASCRIPT", "technical", "", "🌐", "TECHNICAL TOOL", "");
             // Soft Skills
-            stmt.run("Problem Solving & Critical Thinking", "soft", "95%", "🧠", "Breaking down complex security & visual challenges", "");
-            stmt.run("Team Collaboration & Leadership", "soft", "90%", "🤝", "Leading projects and coordinating cross-functional teams", "");
-            stmt.run("Communication & Presentation", "soft", "88%", "💬", "Articulating technical and creative ideas clearly", "");
-            stmt.run("Adaptability & Fast Learning", "soft", "95%", "🚀", "Quickly learning emerging tech, tools, and AI workflows", "");
+            stmt.run("COMMUNICATION", "soft", "", "💬", "CORE COMPETENCY", "");
+            stmt.run("TEAMWORK", "soft", "", "👥", "CORE COMPETENCY", "");
+            stmt.run("LEADERSHIP", "soft", "", "👑", "CORE COMPETENCY", "");
+            stmt.run("TIME MANAGEMENT", "soft", "", "⏰", "CORE COMPETENCY", "");
+            stmt.run("QUICK LEARNING", "soft", "", "⚡", "CORE COMPETENCY", "");
             stmt.finalize();
         }
     });
