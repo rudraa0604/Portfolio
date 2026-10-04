@@ -15,7 +15,9 @@ const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'super-secret-key-for-portfolio-admin';
 
 app.use(cors());
+app.use(cookieParser());
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 // Security & Force HTTPS Middleware
 app.use((req, res, next) => {
     if (process.env.NODE_ENV === 'production' && req.headers['x-forwarded-proto'] && req.headers['x-forwarded-proto'] !== 'https') {
@@ -289,11 +291,14 @@ async function cleanAllOrphanedFiles() {
 
 // Authentication Middleware
 const authenticateToken = (req, res, next) => {
-    const token = req.cookies.admin_token;
-    if (!token) return res.status(401).json({ error: 'Access Denied: No Token Provided!' });
+    const authHeader = req.headers['authorization'];
+    const bearerToken = authHeader && authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : null;
+    const token = (req.cookies && req.cookies.admin_token) || bearerToken;
+    
+    if (!token) return res.status(401).json({ error: 'Access Denied: Please log in to admin panel!' });
 
     jwt.verify(token, JWT_SECRET, (err, decoded) => {
-        if (err) return res.status(403).json({ error: 'Access Denied: Invalid Token!' });
+        if (err) return res.status(403).json({ error: 'Access Denied: Invalid or expired session!' });
         req.user = decoded;
         next();
     });

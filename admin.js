@@ -486,7 +486,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             `;
             div.querySelector('.edit-btn').addEventListener('click', () => editSkill(item));
-            div.querySelector('.delete-btn').addEventListener('click', () => deleteSkill(item.id));
+            div.querySelector('.delete-btn').addEventListener('click', () => deleteSkill(item.id || item._id));
             list.appendChild(div);
         });
     };
@@ -531,7 +531,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (filterSoftBtn) filterSoftBtn.addEventListener('click', () => updateAdminSkillFilterUI('soft'));
 
     window.editSkill = (item) => {
-        document.getElementById('skill-id').value = item.id;
+        document.getElementById('skill-id').value = item.id || item._id || '';
         document.getElementById('skill-category').value = item.category || 'technical';
         document.getElementById('skill-name').value = item.name || '';
         document.getElementById('skill-icon').value = item.icon || '';
@@ -544,6 +544,10 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.deleteSkill = async (id) => {
+        if (!id) {
+            showToast('Invalid Skill ID', true);
+            return;
+        }
         if (!confirm('Are you sure you want to delete this skill?')) return;
         try {
             const res = await fetch(`/api/skills/${id}`, { method: 'DELETE' });
@@ -551,7 +555,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 showToast('Skill deleted successfully');
                 loadSkills();
             } else {
-                showToast('Failed to delete skill', true);
+                const data = await res.json().catch(() => ({}));
+                showToast(data.error || 'Failed to delete skill', true);
             }
         } catch (e) {
             showToast(e.message, true);
